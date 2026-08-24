@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LMS 알리미</title>
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+<div class="page">
+  <div class="page-head">
+    <h1>LMS 알리미</h1>
+    <p>한동대 LMS의 새 일정과 공지사항을 텔레그램으로 알려줘요. 학번/비밀번호는 이 컴퓨터에만 저장되고 어디로도 전송되지 않아요.</p>
+  </div>
+
+  <section class="card" id="account-card">
+    <div class="card-head">
+      <h2 class="card-title"><span class="step-num">1</span>LMS 계정</h2>
+      <span class="pill neutral" id="account-pill">확인 중</span>
+    </div>
+    <p class="card-desc">히스넷 학번/비밀번호로 로그인해서 연결해요.</p>
+
+    <div id="account-connected" style="display:none">
+      <div class="masked-row">
+        <span class="id" id="account-masked"></span>
+        <button class="btn ghost" id="account-disconnect">연결 해제</button>
+      </div>
+    </div>
+
+    <form id="account-form">
+      <div class="field">
+        <label for="student-id">학번</label>
+        <input id="student-id" name="student_id" placeholder="20241234" autocomplete="username" />
+      </div>
+      <div class="field">
+        <label for="password">히스넷 비밀번호</label>
+        <input id="password" name="password" type="password" placeholder="비밀번호" autocomplete="current-password" />
+      </div>
+      <p class="error-text" id="account-error" style="display:none"></p>
+      <button class="btn solid full" type="submit" id="account-submit">연결하기</button>
+    </form>
+  </section>
+
+  <section class="card" id="filters-card">
+    <div class="card-head">
+      <h2 class="card-title"><span class="step-num">2</span>가져올 항목</h2>
+      <span class="pill neutral" id="filters-pill">선택</span>
+    </div>
+    <p class="card-desc">기본은 전체예요. 필요 없는 유형이나 과목은 꺼두면 그만큼만 알려줘요.</p>
+    <p class="locked-hint">먼저 1번 LMS 계정을 연결하세요.</p>
+
+    <div class="filters-body">
+      <div class="filter-group-label">글 유형</div>
+      <div class="chip-row" id="type-chips"></div>
+
+      <div class="filter-group-label" style="margin-top:20px">과목</div>
+      <div id="course-list" class="course-list">
+        <div class="empty-line">아직 과목 목록을 안 가져왔어요</div>
+      </div>
+      <button class="btn ghost" type="button" id="refresh-courses" style="margin-top:8px">과목 불러오기</button>
+    </div>
+  </section>
+
+  <section class="card" id="telegram-card">
+    <div class="card-head">
+      <h2 class="card-title"><span class="step-num">3</span>텔레그램 알림</h2>
+      <span class="pill neutral" id="telegram-pill">확인 중</span>
+    </div>
+    <p class="card-desc">봇 토큰과 chat_id를 연결하면 알림을 보낼 수 있어요.</p>
+    <p class="locked-hint">먼저 1번 LMS 계정을 연결하세요.</p>
+
+    <div class="telegram-body">
+      <div id="telegram-connected" style="display:none">
+        <div class="masked-row">
+          <span class="id" id="telegram-masked"></span>
+          <button class="btn ghost" id="telegram-disconnect">연결 해제</button>
+        </div>
+      </div>
+
+      <form id="telegram-form">
+        <div class="field">
+          <label for="bot-token">봇 토큰</label>
+          <input id="bot-token" name="bot_token" placeholder="BotFather에게 받은 토큰" />
+        </div>
+        <div class="field">
+          <label for="chat-id">chat_id</label>
+          <input id="chat-id" name="chat_id" placeholder="아래 버튼으로 확인" />
+        </div>
+        <div class="row" style="margin-bottom:14px">
+          <button class="btn ghost" type="button" id="fetch-chat-id">봇에게 메시지 보낸 뒤 chat_id 확인</button>
+        </div>
+        <p class="error-text" id="telegram-error" style="display:none"></p>
+        <button class="btn solid full" type="submit" id="telegram-submit">연결하기</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="card" id="run-card">
+    <div class="card-head">
+      <h2 class="card-title"><span class="step-num">4</span>지금 확인</h2>
+    </div>
+    <p class="card-desc">앞으로 7일 안의 새 일정/공지를 지금 바로 확인해서 보내요.</p>
+    <p class="locked-hint">먼저 1번과 3번을 연결하세요.</p>
+    <div class="run-body">
+      <button class="btn solid full" id="run-btn">지금 확인해서 보내기</button>
+      <div class="result-box" id="run-result" style="display:none"></div>
+
+      <div class="filter-group-label" style="margin-top:20px">자동 확인</div>
+      <p class="card-desc" style="margin:0 0 10px">
+        캔버스는 새 글이 올라온 순간 바로 알려주는 기능이 없어서(웹훅 미지원), 완전 실시간은 안 돼요.
+        대신 아래 방식으로 계속 확인해서 새로 생긴 것만 그때그때 보내드릴게요. 서버(이 창)가 켜져 있을 때만 동작해요.
+      </p>
+
+      <div class="seg-row" id="schedule-mode-seg">
+        <button type="button" class="seg-item" data-mode="off">끄기</button>
+        <button type="button" class="seg-item" data-mode="interval">반복 주기</button>
+        <button type="button" class="seg-item" data-mode="fixed">정해진 시각</button>
+      </div>
+
+      <div id="mode-interval" class="schedule-sub" style="display:none">
+        <div class="chip-row" id="poll-chips"></div>
+      </div>
+
+      <div id="mode-fixed" class="schedule-sub" style="display:none">
+        <div class="chip-row" id="fixed-times-chips"></div>
+        <div class="row" style="margin-top:10px">
+          <input type="time" id="fixed-time-input" class="input" style="flex:1" />
+          <button type="button" class="btn ghost" id="add-fixed-time">추가</button>
+        </div>
+        <p class="field-hint">매일 이 시각(들)에 확인해요. 여러 개 추가할 수 있어요.</p>
+      </div>
+
+      <p class="field-hint" id="next-run-hint" style="margin-top:10px"></p>
+
+      <h3 style="font-size:13px;font-weight:600;color:var(--tds-fg-secondary);margin:20px 0 4px">실행 이력</h3>
+      <div class="run-list" id="run-list">
+        <div class="empty-line">아직 실행한 적 없어요</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>
