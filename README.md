@@ -16,7 +16,7 @@
 Python 3.9 이상만 있으면 됩니다.
 
 ```bash
-git clone <이 저장소 URL>
+git clone https://github.com/Dirini/lms-notifier.git
 cd lms-notifier
 python3 bootstrap.py
 ```
