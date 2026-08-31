@@ -107,8 +107,41 @@ async function refreshTelegram() {
   return status.connected;
 }
 
+function renderMissedBanner(missed) {
+  const el = $("#missed-banner");
+  if (!missed) { el.style.display = "none"; return; }
+
+  // 실패가 먼저다 — 놓친 것보다 지금 고쳐야 할 문제이기 때문
+  if (missed.lastError) {
+    el.className = "banner error";
+    el.innerHTML = `<b>마지막 확인이 실패했어요.</b><br>${escapeHtml(missed.lastError)}
+      <div class="banner-act"><button class="btn ghost" id="banner-run">지금 확인하기</button></div>`;
+  } else if (missed.missedCount > 0) {
+    // 시각을 전부 나열하면 읽히지 않는다 — 마지막 확인이 언제였는지만 짚어준다
+    const last = missed.lastSuccessAt
+      ? new Date(missed.lastSuccessAt).toLocaleString("ko-KR", { month: "long", day: "numeric", hour: "numeric", minute: "2-digit" })
+      : null;
+    el.className = "banner";
+    el.innerHTML = `<b>${missed.missedCount}번 확인하지 못했어요.</b>
+      ${last ? `마지막 확인은 ${escapeHtml(last)}이에요.` : ""}
+      <div class="banner-act"><button class="btn ghost" id="banner-run">지금 확인하기</button></div>`;
+  } else {
+    el.style.display = "none";
+    return;
+  }
+  el.style.display = "block";
+  const btn = $("#banner-run");
+  if (btn) btn.addEventListener("click", () => $("#run-btn")?.click());
+}
+
+function escapeHtml(t) {
+  return String(t).replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
 async function refreshRuns() {
-  const { runs } = await api("/api/runs");
+  const { runs, missed } = await api("/api/runs");
+  renderMissedBanner(missed);
   const list = $("#run-list");
   if (!runs || runs.length === 0) {
     list.innerHTML = '<div class="empty-line">아직 실행한 적 없어요</div>';
@@ -118,7 +151,7 @@ async function refreshRuns() {
     .map((r) => {
       const time = new Date(r.at).toLocaleString("ko-KR", { hour12: false });
       let summary;
-      if (!r.ok) summary = `실패 · ${r.error || ""}`;
+      if (!r.ok) summary = `실패 · ${escapeHtml(r.error || "")}`;
       else if (!r.sent) summary = "새 소식 없음";
       else summary = `일정 ${r.new_schedule}건 · 공지 ${r.new_announcements}건 전송함`;
       return `<div class="run-row"><span>${time}</span><span>${summary}</span></div>`;
@@ -156,7 +189,7 @@ function renderScheduleUI() {
     times.length === 0
       ? '<span class="field-hint" style="margin:0">아직 추가한 시각이 없어요</span>'
       : times
-          .map((t) => `<span class="chip-removable">${t}<button type="button" data-remove="${t}">✕</button></span>`)
+          .map((t) => `<span class="chip-removable">${escapeHtml(t)}<button type="button" data-remove="${escapeHtml(t)}">✕</button></span>`)
           .join("");
   $("#fixed-times-chips")
     .querySelectorAll("[data-remove]")
@@ -204,6 +237,28 @@ async function saveSchedule(partial) {
   renderScheduleUI();
   return true;
 }
+
+const FORMAT_HINT = {
+  simple: "날짜와 제목만 한 줄씩. 이미 제출한 과제는 빼고 보내요.",
+  detailed: "분류·과목·마감 시각·제출 여부까지 모두 담아 보내요.",
+};
+
+function renderFormatUI(fmt) {
+  document.querySelectorAll("#format-seg .seg-item").forEach((b) =>
+    b.setAttribute("aria-pressed", String(b.dataset.format === fmt)));
+  $("#format-hint").textContent = FORMAT_HINT[fmt] || "";
+}
+
+document.querySelectorAll("#format-seg .seg-item").forEach((btn) =>
+  btn.addEventListener("click", async () => {
+    const fmt = btn.dataset.format;
+    renderFormatUI(fmt);   // 먼저 반영해 눌린 느낌을 준다
+    try {
+      await api("/api/message-format", { method: "POST", body: { format: fmt } });
+    } catch (err) {
+      showToast("알림 형식을 저장하지 못했어요");
+    }
+  }));
 
 document.querySelectorAll("#schedule-mode-seg .seg-item").forEach((btn) =>
   btn.addEventListener("click", async () => {
@@ -274,8 +329,8 @@ function renderCourseList() {
     .map(
       (c) => `
     <label class="course-row">
-      <input type="checkbox" data-course="${c.id}" ${selected.includes(c.id) ? "checked" : ""} />
-      <span>${c.name}</span>
+      <input type="checkbox" data-course="${escapeHtml(c.id)}" ${selected.includes(c.id) ? "checked" : ""} />
+      <span>${escapeHtml(c.name)}</span>
     </label>`
     )
     .join("");
@@ -322,6 +377,7 @@ async function loadPrefs() {
   renderTypeChips();
   renderCourseList();
   updateFiltersPill();
+  renderFormatUI(currentPrefs.message_format || "detailed");
 }
 
 $("#refresh-courses").addEventListener("click", async () => {

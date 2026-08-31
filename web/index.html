@@ -10,15 +10,16 @@
 <div class="page">
   <div class="page-head">
     <h1>LMS 알리미</h1>
-    <p>한동대 LMS의 새 일정과 공지사항을 텔레그램으로 알려줘요. 학번/비밀번호는 이 컴퓨터에만 저장되고 어디로도 전송되지 않아요.</p>
+    <p>한동대 LMS의 새 일정·공지를 텔레그램으로 알려줘요.<br>학번과 비밀번호는 이 컴퓨터 안에만 저장돼요. 공용 PC에서는 쓰지 마세요.</p>
   </div>
+
+  <div class="banner" id="missed-banner" style="display:none"></div>
 
   <section class="card" id="account-card">
     <div class="card-head">
       <h2 class="card-title"><span class="step-num">1</span>LMS 계정</h2>
       <span class="pill neutral" id="account-pill">확인 중</span>
     </div>
-    <p class="card-desc">히스넷 학번/비밀번호로 로그인해서 연결해요.</p>
 
     <div id="account-connected" style="display:none">
       <div class="masked-row">
@@ -36,6 +37,12 @@
         <label for="password">히스넷 비밀번호</label>
         <input id="password" name="password" type="password" placeholder="비밀번호" autocomplete="current-password" />
       </div>
+      <div class="note">
+        <span class="note-icon">🔒</span>
+        <div>자동 로그인을 위해 비밀번호가 이 컴퓨터의 파일에 <b>암호화 없이</b> 저장돼요.
+        본인만 읽을 수 있게 권한이 걸리지만, 공용 PC에서는 쓰지 마세요.
+        "연결 해제"를 누르면 파일에서 지워져요.</div>
+      </div>
       <p class="error-text" id="account-error" style="display:none"></p>
       <button class="btn solid full" type="submit" id="account-submit">연결하기</button>
     </form>
@@ -46,7 +53,7 @@
       <h2 class="card-title"><span class="step-num">2</span>가져올 항목</h2>
       <span class="pill neutral" id="filters-pill">선택</span>
     </div>
-    <p class="card-desc">기본은 전체예요. 필요 없는 유형이나 과목은 꺼두면 그만큼만 알려줘요.</p>
+    <p class="card-desc">기본은 전체예요. 필요 없는 건 꺼두세요.</p>
     <p class="locked-hint">먼저 1번 LMS 계정을 연결하세요.</p>
 
     <div class="filters-body">
@@ -66,7 +73,6 @@
       <h2 class="card-title"><span class="step-num">3</span>텔레그램 알림</h2>
       <span class="pill neutral" id="telegram-pill">확인 중</span>
     </div>
-    <p class="card-desc">봇 토큰과 chat_id를 연결하면 알림을 보낼 수 있어요.</p>
     <p class="locked-hint">먼저 1번 LMS 계정을 연결하세요.</p>
 
     <div class="telegram-body">
@@ -99,17 +105,19 @@
     <div class="card-head">
       <h2 class="card-title"><span class="step-num">4</span>지금 확인</h2>
     </div>
-    <p class="card-desc">앞으로 7일 안의 새 일정/공지를 지금 바로 확인해서 보내요.</p>
+    <p class="card-desc">앞으로 7일치를 지금 바로 확인해요.</p>
     <p class="locked-hint">먼저 1번과 3번을 연결하세요.</p>
     <div class="run-body">
       <button class="btn solid full" id="run-btn">지금 확인해서 보내기</button>
       <div class="result-box" id="run-result" style="display:none"></div>
 
       <div class="filter-group-label" style="margin-top:20px">자동 확인</div>
-      <p class="card-desc" style="margin:0 0 10px">
-        캔버스는 새 글이 올라온 순간 바로 알려주는 기능이 없어서(웹훅 미지원), 완전 실시간은 안 돼요.
-        대신 아래 방식으로 계속 확인해서 새로 생긴 것만 그때그때 보내드릴게요. 서버(이 창)가 켜져 있을 때만 동작해요.
-      </p>
+      <p class="card-desc" style="margin:0 0 10px">정해둔 주기나 시각에 알아서 확인해요.</p>
+      <div class="note">
+        <span class="note-icon">💡</span>
+        <div><b>이 창이 켜져 있을 때만 확인해요.</b>
+        꺼져 있는 동안 놓친 글은 다음 확인 때 같이 보내드려요.</div>
+      </div>
 
       <div class="seg-row" id="schedule-mode-seg">
         <button type="button" class="seg-item" data-mode="off">끄기</button>
@@ -124,13 +132,20 @@
       <div id="mode-fixed" class="schedule-sub" style="display:none">
         <div class="chip-row" id="fixed-times-chips"></div>
         <div class="row" style="margin-top:10px">
-          <input type="time" id="fixed-time-input" class="input" style="flex:1" />
+          <input type="time" id="fixed-time-input" class="input time-input" />
           <button type="button" class="btn ghost" id="add-fixed-time">추가</button>
         </div>
-        <p class="field-hint">매일 이 시각(들)에 확인해요. 여러 개 추가할 수 있어요.</p>
+        <p class="field-hint">매일 이 시각에 확인해요. 여러 개 추가할 수 있어요.</p>
       </div>
 
       <p class="field-hint" id="next-run-hint" style="margin-top:10px"></p>
+
+      <h3 style="font-size:13px;font-weight:600;color:var(--tds-fg-secondary);margin:20px 0 8px">알림 내용</h3>
+      <div class="seg-row" id="format-seg">
+        <button type="button" class="seg-item" data-format="simple">간단히</button>
+        <button type="button" class="seg-item" data-format="detailed">자세히</button>
+      </div>
+      <p class="field-hint" id="format-hint" style="margin-top:8px"></p>
 
       <h3 style="font-size:13px;font-weight:600;color:var(--tds-fg-secondary);margin:20px 0 4px">실행 이력</h3>
       <div class="run-list" id="run-list">

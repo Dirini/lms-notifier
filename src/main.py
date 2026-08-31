@@ -50,7 +50,8 @@ def format_due(iso_date: str) -> str:
     return f"{date_part} {time_part}"
 
 
-def format_message(new_schedule: list[dict], new_announcements: list[dict]) -> str:
+def _format_detailed(new_schedule: list[dict], new_announcements: list[dict]) -> str:
+    """분류·과목·마감시각·제출여부까지 담는다."""
     lines = ["LMS 새 소식"]
     if new_schedule:
         lines.append("")
@@ -67,6 +68,32 @@ def format_message(new_schedule: list[dict], new_announcements: list[dict]) -> s
             course = f" ({item['course']})" if item.get("course") else ""
             lines.append(f"- {format_due(item['date'])} {item['title']}{course}")
     return "\n".join(lines)
+
+
+def _format_simple(new_schedule: list[dict], new_announcements: list[dict]) -> str:
+    """한 줄에 하나씩, 날짜와 제목만. 이미 제출한 항목은 빼서 할 일만 남긴다."""
+    pending = [i for i in new_schedule if not i.get("submitted")]
+    counts = []
+    if pending:
+        counts.append(f"할 일 {len(pending)}")
+    if new_announcements:
+        counts.append(f"공지 {len(new_announcements)}")
+    lines = ["LMS " + (" · ".join(counts) if counts else "새 소식")]
+    for item in pending:
+        lines.append(f"· {format_due(item['date'])} {item['title']}")
+    for item in new_announcements:
+        lines.append(f"· {format_due(item['date'])} {item['title']}")
+    if not pending and not new_announcements:
+        # 새 일정이 전부 제출 완료라 보여줄 게 없을 때
+        lines.append("· 새로 생긴 항목이 모두 제출 완료 상태예요")
+    return "\n".join(lines)
+
+
+def format_message(new_schedule: list[dict], new_announcements: list[dict],
+                   message_format: str = "detailed") -> str:
+    if message_format == "simple":
+        return _format_simple(new_schedule, new_announcements)
+    return _format_detailed(new_schedule, new_announcements)
 
 
 def run(days: int, dry_run: bool) -> int:
@@ -104,7 +131,8 @@ def run(days: int, dry_run: bool) -> int:
         print("새로운 일정/공지 없음")
         return 0
 
-    message = format_message(new_schedule, new_announcements)
+    message = format_message(new_schedule, new_announcements,
+                             filters.get("message_format", "detailed"))
     print(message)
 
     if dry_run:

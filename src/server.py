@@ -106,7 +106,8 @@ def perform_run(days: int = 7) -> dict:
         }
 
         if new_schedule or new_announcements:
-            message = flow.format_message(new_schedule, new_announcements)
+            message = flow.format_message(new_schedule, new_announcements,
+                                          filters.get("message_format", "detailed"))
             telegram.send_message(tg["bot_token"], tg["chat_id"], message)
             state_mod.mark_seen(state, new_schedule + new_announcements)
             state_mod.prune(state)
@@ -132,6 +133,60 @@ def _next_fixed_time(fixed_times: list[str], after: dt.datetime) -> dt.datetime 
             candidate += dt.timedelta(days=1)
         candidates.append(candidate)
     return min(candidates) if candidates else None
+
+
+def _missed_since(fixed_times: list[str], since: dt.datetime, now: dt.datetime) -> list[dt.datetime]:
+    """since 이후 now 까지 지나간 예약 시각을 모두 돌려준다.
+
+    컴퓨터가 꺼져 있었거나 프로그램이 떠 있지 않았다면 그 시각들은 실행되지 않았다.
+    스케줄러는 항상 '지금' 기준으로 다음 실행을 잡기 때문에 놓친 회차는 따라잡지 않는다 —
+    그래서 여기서 따로 세어 사용자에게 알려준다."""
+    if not fixed_times or since >= now:
+        return []
+    missed = []
+    day = since.date()
+    while day <= now.date():
+        for value in fixed_times:
+            try:
+                hh, mm = (int(part) for part in value.split(":"))
+            except ValueError:
+                continue
+            at = dt.datetime.combine(day, dt.time(hh, mm), tzinfo=now.tzinfo)
+            if since < at <= now:
+                missed.append(at)
+        day += dt.timedelta(days=1)
+    return sorted(missed)
+
+
+def missed_summary() -> dict:
+    """놓친 예약 실행과 마지막 실패를 요약한다 (화면 상단 배너용)."""
+    p = prefs.load()
+    history = runs.recent()
+    now = dt.datetime.now(KST)
+
+    last_ok_at = None
+    for entry in history:
+        if entry.get("ok"):
+            try:
+                last_ok_at = dt.datetime.fromisoformat(entry["at"])
+            except (ValueError, KeyError):
+                pass
+            break
+
+    last_error = None
+    if history and not history[0].get("ok"):
+        last_error = history[0].get("error") or "확인에 실패했어요"
+
+    missed = []
+    if p.get("schedule_mode") == "fixed" and last_ok_at:
+        missed = _missed_since(p.get("fixed_times") or [], last_ok_at, now)
+
+    return {
+        "lastSuccessAt": last_ok_at.isoformat() if last_ok_at else None,
+        "lastError": last_error,
+        "missedCount": len(missed),
+        "missedTimes": [m.isoformat() for m in missed[-5:]],
+    }
 
 
 def _compute_next_run(mode: str, poll_minutes: int | None, fixed_times: list[str], now: dt.datetime) -> dt.datetime | None:
@@ -185,10 +240,29 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _same_origin(self) -> bool:
+        """이 서버는 인증이 없다. 사용자가 방문한 아무 웹페이지나 localhost로 요청을
+        보낼 수 있으므로(CSRF), Host와 Origin을 직접 확인해서 막는다.
+        Host 검사는 DNS rebinding(외부 도메인이 127.0.0.1로 해석되게 하는 공격)도 함께 차단한다."""
+        allowed = {f"127.0.0.1:{PORT}", f"localhost:{PORT}", f"[::1]:{PORT}"}
+        if self.headers.get("Host", "") not in allowed:
+            return False
+        origin = self.headers.get("Origin")
+        if origin and origin not in {f"http://{h}" for h in allowed}:
+            return False
+        return True
+
     def _read_json(self) -> dict:
+        # Content-Type 을 강제하면 브라우저가 프리플라이트를 보내야만 해서
+        # 크로스 사이트에서 오는 '단순 요청' 우회가 막힌다.
+        ctype = (self.headers.get("Content-Type") or "").split(";")[0].strip().lower()
+        if ctype != "application/json":
+            raise ValueError("content-type must be application/json")
         length = int(self.headers.get("Content-Length", "0"))
-        if length == 0:
+        if length <= 0:
             return {}
+        if length > 256 * 1024:
+            raise ValueError("body too large")
         raw = self.rfile.read(length)
         return json.loads(raw.decode("utf-8"))
 
@@ -211,13 +285,15 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
+        if not self._same_origin():
+            return self._send_json(403, {"error": "허용되지 않은 요청입니다"})
         path = urlparse(self.path).path
         if path == "/api/account":
             return self._send_json(200, account_status())
         if path == "/api/telegram":
             return self._send_json(200, telegram_status())
         if path == "/api/runs":
-            return self._send_json(200, {"runs": runs.recent()})
+            return self._send_json(200, {"runs": runs.recent(), "missed": missed_summary()})
         if path == "/api/prefs":
             return self._send_json(200, prefs.load())
         if path == "/api/schedule":
@@ -234,6 +310,8 @@ class Handler(BaseHTTPRequestHandler):
         return self._serve_static(path)
 
     def do_POST(self):
+        if not self._same_origin():
+            return self._send_json(403, {"error": "허용되지 않은 요청입니다"})
         path = urlparse(self.path).path
         try:
             body = self._read_json()
@@ -242,6 +320,11 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == "/api/account":
             return self._handle_account_connect(body)
+        if path == "/api/message-format":
+            fmt = (body.get("format") or "detailed").strip()
+            if fmt not in ("simple", "detailed"):
+                return self._send_json(400, {"error": "형식 값이 올바르지 않습니다"})
+            return self._send_json(200, prefs.set_message_format(fmt))
         if path == "/api/account/disconnect":
             secrets_store.clear_account()
             return self._send_json(200, {"connected": False})
@@ -293,7 +376,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             chat_id = telegram.get_latest_chat_id(bot_token)
         except Exception as exc:  # noqa: BLE001 - surface any Telegram API failure to the UI
-            return self._send_json(200, {"chat_id": None, "error": str(exc)})
+            # 예외 메시지에 토큰이 실려 올 수 있다 — 화면으로 돌려주기 전에 가린다
+            return self._send_json(200, {"chat_id": None, "error": telegram.scrub(exc, bot_token)})
         return self._send_json(200, {"chat_id": chat_id})
 
     def _handle_prefs_save(self, body: dict):
@@ -320,13 +404,19 @@ class Handler(BaseHTTPRequestHandler):
             if minutes < MIN_POLL_MINUTES:
                 return self._send_json(400, {"error": f"자동 확인은 {MIN_POLL_MINUTES}분 이상으로만 설정할 수 있어요"})
 
+        # 형식 검증은 모드와 무관하게 항상 한다 — off/interval 로 보내면서 임의 문자열을
+        # 심어두면 화면이 그걸 그대로 렌더해 저장형 XSS 가 된다.
         fixed_times = body.get("fixed_times") or []
-        if mode == "fixed":
-            if not isinstance(fixed_times, list) or not fixed_times:
-                return self._send_json(400, {"error": "적어도 한 개 이상의 시각을 추가하세요"})
-            for value in fixed_times:
-                if not re.match(r"^([01]\d|2[0-3]):[0-5]\d$", str(value)):
-                    return self._send_json(400, {"error": f"'{value}'는 올바른 시각(HH:MM) 형식이 아니에요"})
+        if not isinstance(fixed_times, list):
+            return self._send_json(400, {"error": "fixed_times는 목록이어야 합니다"})
+        if len(fixed_times) > 24:
+            return self._send_json(400, {"error": "시각은 24개까지만 설정할 수 있어요"})
+        for value in fixed_times:
+            if not re.match(r"^([01]\d|2[0-3]):[0-5]\d$", str(value)):
+                return self._send_json(400, {"error": f"'{value}'는 올바른 시각(HH:MM) 형식이 아니에요"})
+        fixed_times = [str(v) for v in fixed_times]
+        if mode == "fixed" and not fixed_times:
+            return self._send_json(400, {"error": "적어도 한 개 이상의 시각을 추가하세요"})
 
         prefs.set_schedule(mode, minutes, fixed_times)
         scheduler_state["next_run_at"] = None  # 다음 스케줄러 틱에서 새 설정으로 다시 계산
@@ -348,7 +438,11 @@ class Handler(BaseHTTPRequestHandler):
         return self._send_json(200, data)
 
     def _handle_run(self, body: dict):
-        days = int(body.get("days") or 7)
+        try:
+            days = int(body.get("days") or 7)
+        except (TypeError, ValueError):
+            return self._send_json(400, {"error": "days는 숫자여야 합니다"})
+        days = max(1, min(days, 60))   # 학교 서버에 과한 조회를 보내지 않도록 상한을 둔다
         result = perform_run(days)
         return self._send_json(200, result)
 

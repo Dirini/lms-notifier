@@ -1,4 +1,6 @@
-@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css");
+/* 외부 폰트 CDN 을 부르지 않는다 — 이 화면에는 비밀번호 입력칸이 있고,
+   페이지를 열 때마다 제3자에게 접속 기록이 남는 걸 피한다.
+   Pretendard 가 설치돼 있으면 쓰고, 없으면 OS 기본 한글 글꼴로 떨어진다. */
 
 :root {
   --blue-500: #3182f6;
@@ -45,13 +47,19 @@
   --tds-press-overlay: rgba(0, 0, 0, 0.26);
   --tds-disabled-opacity: 0.3;
 
+  --radius-xs: 4px;
   --radius-s: 8px;
   --radius-m: 12px;
   --radius-l: 14px;
   --radius-xl: 16px;
   --radius-2xl: 20px;
   --radius-3xl: 24px;
+  --radius-4xl: 32px;
   --radius-full: 999px;
+
+  /* elevation — floating/modal 에만 쓴다 (design.md §4) */
+  --shadow-1: 0 1px 2px rgba(25, 31, 40, 0.08);
+  --shadow-3: 0 12px 24px rgba(25, 31, 40, 0.18);
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --dur-fast: 120ms;
@@ -66,7 +74,8 @@ body {
   margin: 0;
   background: var(--tds-bg-secondary);
   color: var(--tds-fg-primary);
-  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
   font-size: 15px;
   font-weight: 400;
   line-height: 1.5;
@@ -178,7 +187,7 @@ body {
   align-items: center;
   height: 22px;
   padding: 0 8px;
-  border-radius: var(--radius-s);
+  border-radius: var(--radius-xs);
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
@@ -203,7 +212,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .field label {
@@ -218,7 +227,7 @@ body {
   border-radius: var(--radius-m);
   border: 1.5px solid transparent;
   background: var(--grey-100);
-  padding: 0 14px;
+  padding: 0 16px;
   font: inherit;
   color: var(--tds-fg-primary);
   transition: background var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
@@ -240,8 +249,8 @@ body {
 .field-hint {
   font-size: 13px;
   color: var(--tds-fg-tertiary);
-  margin-top: -8px;
-  margin-bottom: 14px;
+  margin-top: 4px;
+  margin-bottom: 16px;
 }
 
 button {
@@ -269,7 +278,7 @@ button:active::after {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   border-radius: var(--radius-m);
   height: 40px;
   padding: 0 16px;
@@ -299,6 +308,11 @@ button:active::after {
 
 .btn.full {
   width: 100%;
+  /* 전체폭 주 액션은 button L 규격 (design.md §5) */
+  height: 48px;
+  border-radius: var(--radius-l);
+  font-size: 17px;
+  font-weight: 700;
 }
 
 .row {
@@ -418,7 +432,7 @@ button:active::after {
   border-radius: var(--radius-l);
   font-size: 13px;
   font-weight: 600;
-  box-shadow: 0 12px 24px rgba(25, 31, 40, 0.18);
+  box-shadow: var(--shadow-3);
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--dur-base) var(--ease-out), transform var(--dur-base) var(--ease-out);
@@ -434,7 +448,7 @@ button:active::after {
   font-size: 13px;
   font-weight: 600;
   color: var(--tds-fg-secondary);
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .chip-row {
@@ -449,8 +463,8 @@ button:active::after {
   border-radius: var(--radius-full);
   background: var(--grey-100);
   color: var(--tds-fg-primary);
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .chip-btn[aria-pressed="true"] {
@@ -466,7 +480,7 @@ button:active::after {
 .course-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-height: 44px;
   border-radius: var(--radius-m);
   padding: 0 4px;
@@ -484,15 +498,15 @@ button:active::after {
 }
 
 .course-row span {
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .seg-row {
   display: flex;
   background: var(--grey-100);
   border-radius: var(--radius-m);
-  padding: 3px;
-  gap: 2px;
+  padding: 4px;
+  gap: 4px;
 }
 
 .seg-item {
@@ -508,24 +522,24 @@ button:active::after {
 .seg-item[aria-pressed="true"] {
   background: #fff;
   color: var(--tds-fg-primary);
-  box-shadow: 0 1px 2px rgba(25, 31, 40, 0.08);
+  box-shadow: var(--shadow-1);
 }
 
 .schedule-sub {
-  margin-top: 14px;
+  margin-top: 16px;
 }
 
 .chip-removable {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   height: 34px;
   padding: 0 8px 0 16px;
   border-radius: var(--radius-full);
   background: var(--grey-900);
   color: #fff;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
@@ -548,3 +562,50 @@ button:active::after {
   font-size: 13px;
   margin: -6px 0 14px;
 }
+
+
+/* 시각 입력 — width:100% 로 늘어나면 값이 왼쪽에 몰려 빈 칸처럼 보인다.
+   내용(오전 --:--)에 맞는 폭으로 고정하고 버튼과 나란히 둔다. */
+.input.time-input {
+  width: auto;
+  flex: 0 0 auto;
+  min-width: 160px;
+}
+
+/* 입력칸 바로 아래 오는 설명은 음수 마진 때문에 붙어 보였다 */
+.schedule-sub .field-hint {
+  margin-top: 8px;
+}
+
+
+/* 놓친 확인 / 실패 알림 배너 — body-2 / 4px 스케일 / semantic alias만 */
+.banner {
+  border-radius: var(--radius-xl);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  background: var(--tds-bg-brand-weak);
+  color: var(--tds-fg-secondary);
+}
+.banner b { font-weight: 600; color: var(--tds-fg-primary); }
+.banner.error { background: var(--tds-bg-danger-weak); }
+.banner .banner-act { margin-top: 12px; display: inline-flex; gap: 8px; }
+
+
+/* 짧은 참고 문구 — body-3(13/400) / 4px 스케일 / semantic alias */
+.note {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  background: var(--tds-bg-tertiary);
+  border-radius: var(--radius-m);
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--tds-fg-secondary);
+  margin-bottom: 16px;
+}
+.note b { color: var(--tds-fg-primary); font-weight: 600; }
+.note-icon { flex: 0 0 auto; }

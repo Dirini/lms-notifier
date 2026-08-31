@@ -16,6 +16,7 @@ DEFAULTS = {
     "poll_minutes": None,
     "schedule_mode": "off",  # "off" | "interval" | "fixed"
     "fixed_times": [],  # ["09:00", "18:00"] 형식, KST 기준 매일
+    "message_format": "detailed",  # "simple" | "detailed"
 }
 
 
@@ -31,7 +32,10 @@ def load() -> dict:
 def save(data: dict) -> None:
     LOCAL_DIR.mkdir(mode=0o700, exist_ok=True)
     PREFS_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-    os.chmod(PREFS_PATH, 0o600)
+    try:
+        os.chmod(PREFS_PATH, 0o600)
+    except (OSError, NotImplementedError):
+        pass  # 윈도우에는 POSIX 권한이 없다 — 실패해도 저장 자체는 계속한다
 
 
 def set_filters(course_ids: list[str] | None, types: list[str] | None) -> dict:
@@ -54,5 +58,12 @@ def set_schedule(mode: str, poll_minutes: int | None, fixed_times: list[str]) ->
     data["schedule_mode"] = mode
     data["poll_minutes"] = poll_minutes
     data["fixed_times"] = fixed_times
+    save(data)
+    return data
+
+
+def set_message_format(fmt: str) -> dict:
+    data = load()
+    data["message_format"] = fmt if fmt in ("simple", "detailed") else "detailed"
     save(data)
     return data

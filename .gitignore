@@ -6,3 +6,10 @@ __pycache__/
 .venv/
 server.log
 run.log
+
+# 편집 중 생기는 파일 — 실수로 공개 저장소에 올라가지 않게
+*.bak
+*.log
+.DS_Store
+.env.*
+!.env.example

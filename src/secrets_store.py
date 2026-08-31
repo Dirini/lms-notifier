@@ -22,7 +22,10 @@ def load() -> dict:
 def save(data: dict) -> None:
     _ensure_dir()
     SECRETS_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-    os.chmod(SECRETS_PATH, 0o600)
+    try:
+        os.chmod(SECRETS_PATH, 0o600)
+    except (OSError, NotImplementedError):
+        pass  # 윈도우에는 POSIX 권한이 없다 — 실패해도 저장 자체는 계속한다
 
 
 def set_account(student_id: str, password: str) -> None:

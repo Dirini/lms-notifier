@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import os
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -18,6 +19,10 @@ def append(entry: dict) -> None:
     runs.insert(0, entry)
     runs = runs[:MAX_RUNS]
     RUNS_PATH.write_text(json.dumps(runs, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:
+        os.chmod(RUNS_PATH, 0o600)   # preview 에 과제·공지 제목이 담긴다
+    except (OSError, NotImplementedError):
+        pass  # 윈도우에는 POSIX 권한이 없다
 
 
 def recent() -> list[dict]:
