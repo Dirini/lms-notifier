@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import os
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -17,6 +18,10 @@ def load(path: Path) -> dict:
 
 def save(path: Path, state: dict) -> None:
     path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:
+        os.chmod(path, 0o600)  # 다른 파일과 권한 일관성 (본 항목 id·시각만 담김)
+    except (OSError, NotImplementedError):
+        pass  # 윈도우에는 POSIX 권한이 없다
 
 
 def filter_new(state: dict, items: list[dict]) -> list[dict]:

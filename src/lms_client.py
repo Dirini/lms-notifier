@@ -19,6 +19,35 @@ REQUEST_TIMEOUT = 15  # 초. 각 단계는 이 시간 안에 응답이 와야 �
 SESSION_TTL = 25 * 60  # noqa: E262
 BASE = "https://lms.handong.edu"
 
+_session_cache: dict[str, tuple[requests.Session, float]] = {}
+
+
+class LMSLoginError(RuntimeError):
+    pass
+
+
+@contextmanager
+def _step(name: str):
+    started = time.monotonic()
+    try:
+        yield
+    except requests.Timeout as exc:
+        elapsed = time.monotonic() - started
+        print(f"[lms_client] {name}: 시간 초과 ({elapsed:.1f}s)", file=sys.stderr)
+        raise LMSLoginError(f"'{name}' 단계에서 학교 서버 응답이 {REQUEST_TIMEOUT}초 넘게 없었습니다. 네트워크가 느리거나 서버가 응답하지 않는 것 같아요.") from exc
+    except requests.RequestException as exc:
+        elapsed = time.monotonic() - started
+        print(f"[lms_client] {name}: 네트워크 오류 ({elapsed:.1f}s) {exc}", file=sys.stderr)
+        raise LMSLoginError(f"'{name}' 단계에서 네트워크 오류가 발생했습니다: {exc}") from exc
+    else:
+        elapsed = time.monotonic() - started
+        print(f"[lms_client] {name}: {elapsed:.1f}s", file=sys.stderr)
+
+
+# 한동대 캔버스(LMS) 플래너가 다루는 유형 중 "일정"과 "공지사항"으로 나눠서 취급한다.
+SCHEDULE_TYPES = {"assignment", "quiz", "calendar_event", "discussion_topic", "planner_note"}
+ANNOUNCEMENT_TYPES = {"announcement"}
+
 
 def _format_pem(raw_key_block: str) -> bytes:
     body = (
