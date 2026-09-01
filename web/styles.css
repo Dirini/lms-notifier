@@ -618,3 +618,26 @@ button:active::after {
 .howto li { margin-bottom: 4px; line-height: 1.5; }
 .howto p { margin: 12px 0 0; color: var(--tds-fg-tertiary); }
 .auth-pane { margin-top: 16px; }
+
+
+/* 알림 형식 미리보기 — 실제로 오는 메시지 모양을 그대로 보여준다 */
+.preview { margin-top: 12px; }
+.preview-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--tds-fg-tertiary);
+  margin-bottom: 8px;
+}
+.preview-body {
+  margin: 0;
+  background: var(--tds-bg-tertiary);
+  border-radius: var(--radius-m);
+  padding: 16px;
+  font-family: inherit;      /* 텔레그램에서 보이는 대로 — 고정폭이 아니다 */
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--tds-fg-secondary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-height: 40px;
+}

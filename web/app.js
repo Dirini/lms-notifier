@@ -246,10 +246,24 @@ const FORMAT_HINT = {
   detailed: "분류·과목·마감 시각·제출 여부까지 모두 담아 보내요.",
 };
 
+// 미리보기는 서버가 실제 전송 함수로 만들어 준다 — 화면에 예시를 적어두면 포맷이 바뀔 때 어긋난다
+let formatPreviews = null;
+
 function renderFormatUI(fmt) {
   document.querySelectorAll("#format-seg .seg-item").forEach((b) =>
     b.setAttribute("aria-pressed", String(b.dataset.format === fmt)));
   $("#format-hint").textContent = FORMAT_HINT[fmt] || "";
+  const body = $("#format-preview-body");
+  if (body) body.textContent = formatPreviews ? (formatPreviews[fmt] || "") : "불러오는 중…";
+}
+
+async function loadFormatPreviews() {
+  try {
+    formatPreviews = await api("/api/message-preview");
+  } catch (err) {
+    formatPreviews = null;
+  }
+  renderFormatUI(currentPrefs?.message_format || "detailed");
 }
 
 document.querySelectorAll("#format-seg .seg-item").forEach((btn) =>
@@ -381,6 +395,7 @@ async function loadPrefs() {
   renderCourseList();
   updateFiltersPill();
   renderFormatUI(currentPrefs.message_format || "detailed");
+  if (!formatPreviews) loadFormatPreviews();
 }
 
 $("#refresh-courses").addEventListener("click", async () => {

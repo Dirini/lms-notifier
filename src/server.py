@@ -38,6 +38,26 @@ run_lock = threading.Lock()
 scheduler_state = {"next_run_at": None, "running": False}
 
 
+def message_preview() -> dict:
+    """두 형식의 실제 출력 예시. 화면에 문구를 따로 적어두면 포맷이 바뀔 때 어긋나므로,
+    실제 전송에 쓰는 format_message 를 그대로 통과시킨다."""
+    now = dt.datetime.now(KST)
+    sample_schedule = [
+        {"type": "assignment", "date": (now + dt.timedelta(days=2)).replace(hour=23, minute=59).isoformat(),
+         "title": "3주차 과제: 자료구조 구현", "course": "자료구조", "submitted": False},
+        {"type": "quiz", "date": (now + dt.timedelta(days=4)).replace(hour=13, minute=0).isoformat(),
+         "title": "중간 퀴즈", "course": "운영체제", "submitted": True},
+    ]
+    sample_announcements = [
+        {"type": "announcement", "date": now.replace(hour=9, minute=0).isoformat(),
+         "title": "휴강 안내 (9월 3일)", "course": "운영체제", "submitted": False},
+    ]
+    return {
+        "simple": flow.format_message(sample_schedule, sample_announcements, "simple"),
+        "detailed": flow.format_message(sample_schedule, sample_announcements, "detailed"),
+    }
+
+
 def account_status() -> dict:
     account = secrets_store.get_account()
     if not account:
@@ -305,6 +325,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send_json(200, {"runs": runs.recent(), "missed": missed_summary()})
         if path == "/api/prefs":
             return self._send_json(200, prefs.load())
+        if path == "/api/message-preview":
+            return self._send_json(200, message_preview())
         if path == "/api/schedule":
             p = prefs.load()
             return self._send_json(
