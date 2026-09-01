@@ -55,12 +55,23 @@ def token_session(base_url: str, token: str) -> requests.Session:
         resp = session.get(f"{base}/api/v1/users/self", timeout=REQUEST_TIMEOUT)
     if resp.status_code == 401:
         raise LMSLoginError("토큰이 올바르지 않거나 만료됐어요. LMS에서 새 액세스 토큰을 발급받아 주세요.")
-    if resp.status_code == 404:
-        raise LMSLoginError("이 주소에서 Canvas API를 찾지 못했어요. 학교 LMS 주소가 맞는지 확인해 주세요.")
+    if resp.status_code != 200:
+        raise LMSLoginError(
+            f"이 주소는 Canvas LMS가 아닌 것 같아요 (응답 {resp.status_code}). "
+            "로그인 포털이 아니라, 브라우저에서 과목 목록이 보이는 주소를 넣어 주세요."
+        )
     try:
-        _parse_canvas_json_or_raise(resp)
-    except Exception as exc:
-        raise LMSLoginError(f"토큰으로 접속하지 못했어요: {exc}") from None
+        me = _parse_canvas_json_or_raise(resp)
+    except LMSLoginError:
+        raise LMSLoginError(
+            "이 주소에서 Canvas API 응답을 받지 못했어요. 학교 LMS 주소가 맞는지 확인해 주세요."
+        ) from None
+    # JSON 이라고 다 Canvas 가 아니다 — 사용자 객체 모양인지까지 본다
+    if not isinstance(me, dict) or not me.get("id"):
+        raise LMSLoginError(
+            "이 주소는 Canvas LMS가 아닌 것 같아요. "
+            "로그인 포털이 아니라, 브라우저에서 과목 목록이 보이는 주소를 넣어 주세요."
+        )
     return session  # 초. 로그인 세션을 이만큼 재사용해서, 매번 SSO 5단계를 다시 안 거치게 한다.
 
 _session_cache: dict[str, tuple[requests.Session, float]] = {}
