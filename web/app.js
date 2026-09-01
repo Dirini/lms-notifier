@@ -78,7 +78,10 @@ async function refreshAccount() {
     setPill(pill, "success", "완료");
     connected.style.display = "block";
     form.style.display = "none";
-    $("#account-masked").textContent = status.masked;
+    $("#account-masked").textContent = status.mode === "canvas"
+      ? `${status.base_url.replace(/^https:\/\//, "")} · ${status.masked}`
+      : status.masked;
+    if (status.mode) renderAuthMode(status.mode);
   } else {
     setPill(pill, "neutral", "연결 필요");
     connected.style.display = "none";
@@ -396,15 +399,33 @@ $("#refresh-courses").addEventListener("click", async () => {
   showToast(`과목 ${result.known_courses.length}개를 가져왔어요`);
 });
 
+// 로그인 방식 — canvas(액세스 토큰, 모든 Canvas 학교) / handong(학교 SSO)
+let authMode = "canvas";
+
+function renderAuthMode(mode) {
+  authMode = mode;
+  document.querySelectorAll("#auth-mode-seg .seg-item").forEach((b) =>
+    b.setAttribute("aria-pressed", String(b.dataset.auth === mode)));
+  $("#auth-canvas").style.display = mode === "canvas" ? "block" : "none";
+  $("#auth-handong").style.display = mode === "handong" ? "block" : "none";
+  $("#account-error").style.display = "none";
+}
+
+document.querySelectorAll("#auth-mode-seg .seg-item").forEach((btn) =>
+  btn.addEventListener("click", () => renderAuthMode(btn.dataset.auth)));
+
 $("#account-form").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const student_id = $("#student-id").value.trim();
-  const password = $("#password").value;
   const errorEl = $("#account-error");
   const submitBtn = $("#account-submit");
   errorEl.style.display = "none";
+
+  const body = authMode === "canvas"
+    ? { mode: "canvas", base_url: $("#base-url").value.trim(), token: $("#access-token").value.trim() }
+    : { mode: "handong", student_id: $("#student-id").value.trim(), password: $("#password").value };
+
   const stop = startLoading(submitBtn);
-  const result = await api("/api/account", { method: "POST", body: { student_id, password } });
+  const result = await api("/api/account", { method: "POST", body });
   stop();
   submitBtn.disabled = false;
   submitBtn.textContent = "연결하기";
@@ -414,6 +435,7 @@ $("#account-form").addEventListener("submit", async (e) => {
     return;
   }
   $("#password").value = "";
+  $("#access-token").value = "";
   showToast("LMS 계정이 연결됐어요");
   await refreshFlowState();
 });

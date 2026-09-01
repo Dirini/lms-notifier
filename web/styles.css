@@ -609,3 +609,12 @@ button:active::after {
 }
 .note b { color: var(--tds-fg-primary); font-weight: 600; }
 .note-icon { flex: 0 0 auto; }
+
+
+/* 토큰 발급 방법 접기 — 필요할 때만 펴서 본다 */
+.howto { font-size: 13px; color: var(--tds-fg-secondary); margin-bottom: 16px; }
+.howto summary { cursor: pointer; color: var(--tds-fg-brand); font-weight: 600; }
+.howto ol { margin: 12px 0 0; padding-left: 20px; }
+.howto li { margin-bottom: 4px; line-height: 1.5; }
+.howto p { margin: 12px 0 0; color: var(--tds-fg-tertiary); }
+.auth-pane { margin-top: 16px; }

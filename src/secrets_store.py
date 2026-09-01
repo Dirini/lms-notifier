@@ -29,8 +29,16 @@ def save(data: dict) -> None:
 
 
 def set_account(student_id: str, password: str) -> None:
+    """한동대 SSO 방식 — 학번/비밀번호로 로그인한다."""
     data = load()
-    data["account"] = {"student_id": student_id, "password": password}
+    data["account"] = {"mode": "handong", "student_id": student_id, "password": password}
+    save(data)
+
+
+def set_token_account(base_url: str, token: str, label: str = "") -> None:
+    """Canvas 액세스 토큰 방식 — 어느 Canvas 학교든 되고, 비밀번호를 저장하지 않는다."""
+    data = load()
+    data["account"] = {"mode": "canvas", "base_url": base_url, "token": token, "label": label}
     save(data)
 
 
@@ -41,7 +49,10 @@ def clear_account() -> None:
 
 
 def get_account() -> dict | None:
-    return load().get("account")
+    account = load().get("account")
+    if account and "mode" not in account:
+        account["mode"] = "handong"   # 토큰 방식이 생기기 전에 저장된 계정
+    return account
 
 
 def set_telegram(bot_token: str, chat_id: str) -> None:
@@ -64,3 +75,9 @@ def mask_id(student_id: str) -> str:
     if len(student_id) <= 4:
         return student_id
     return f"{student_id[:2]}{'*' * (len(student_id) - 4)}{student_id[-2:]}"
+
+
+def mask_token(token: str) -> str:
+    if len(token) <= 8:
+        return "*" * len(token)
+    return f"{token[:4]}{'*' * 6}{token[-4:]}"

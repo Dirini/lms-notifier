@@ -8,6 +8,7 @@ import re
 import sys
 import time
 from contextlib import contextmanager
+from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
 import requests
@@ -16,7 +17,51 @@ from cryptography.hazmat.primitives.asymmetric import padding
 
 KST = ZoneInfo("Asia/Seoul")
 REQUEST_TIMEOUT = 15  # 초. 각 단계는 이 시간 안에 응답이 와야 한다 (학교 서버가 느리면 여기서 걸린다).
-SESSION_TTL = 25 * 60  # 초. 로그인 세션을 이만큼 재사용해서, 매번 SSO 5단계를 다시 안 거치게 한다.
+SESSION_TTL = 25 * 60  # noqa: E262
+HANDONG_BASE = "https://lms.handong.edu"
+
+
+def base_of(session: requests.Session) -> str:
+    """이 세션이 바라보는 학교 Canvas 주소. 로그인 방식과 무관하게 세션에 붙여 둔다."""
+    return getattr(session, "base_url", HANDONG_BASE)
+
+
+def normalize_base(raw: str) -> str:
+    """사용자가 붙여넣는 형태(`lms.handong.edu`, `https://lms.handong.edu/`,
+    `https://lms.handong.edu/courses` 등)를 API 호출에 쓸 origin 으로 정리한다."""
+    value = (raw or "").strip()
+    if not value:
+        raise ValueError("학교 LMS 주소를 입력하세요")
+    if not value.startswith(("http://", "https://")):
+        value = "https://" + value
+    parsed = urlparse(value)
+    if parsed.scheme != "https" or not parsed.netloc:
+        raise ValueError("https:// 로 시작하는 학교 LMS 주소를 입력하세요")
+    return f"https://{parsed.netloc}"
+
+
+def token_session(base_url: str, token: str) -> requests.Session:
+    """Canvas 개인 액세스 토큰으로 붙는다. 학교 SSO 를 거치지 않으므로 어느 Canvas 학교든 동작하고,
+    비밀번호를 저장할 필요가 없다."""
+    base = normalize_base(base_url)
+    session = requests.session()
+    session.headers.update({
+        "User-Agent": "Mozilla/5.0 LMSNotifier/1.0",
+        "Accept": "application/json",
+        "Authorization": f"Bearer {token.strip()}",
+    })
+    session.base_url = base
+    with _step("토큰 확인"):
+        resp = session.get(f"{base}/api/v1/users/self", timeout=REQUEST_TIMEOUT)
+    if resp.status_code == 401:
+        raise LMSLoginError("토큰이 올바르지 않거나 만료됐어요. LMS에서 새 액세스 토큰을 발급받아 주세요.")
+    if resp.status_code == 404:
+        raise LMSLoginError("이 주소에서 Canvas API를 찾지 못했어요. 학교 LMS 주소가 맞는지 확인해 주세요.")
+    try:
+        _parse_canvas_json_or_raise(resp)
+    except Exception as exc:
+        raise LMSLoginError(f"토큰으로 접속하지 못했어요: {exc}") from None
+    return session  # 초. 로그인 세션을 이만큼 재사용해서, 매번 SSO 5단계를 다시 안 거치게 한다.
 
 _session_cache: dict[str, tuple[requests.Session, float]] = {}
 
@@ -141,8 +186,9 @@ def login(student_id: str, password: str) -> requests.Session:
             timeout=REQUEST_TIMEOUT,
         )
 
+    session.base_url = HANDONG_BASE
     with _step("5/5 로그인 확인"):
-        check = session.get("https://lms.handong.edu/api/v1/users/self", timeout=REQUEST_TIMEOUT)
+        check = session.get(f"{HANDONG_BASE}/api/v1/users/self", timeout=REQUEST_TIMEOUT)
     try:
         _strip_canvas_json(check.text)
     except (json.JSONDecodeError, ValueError) as exc:
@@ -182,7 +228,7 @@ def fetch_planner_items(session: requests.Session, days: int) -> tuple[list[dict
         "per_page": "100",
     }
     with _step("플래너 항목 조회"):
-        resp = session.get("https://lms.handong.edu/api/v1/planner/items", params=params, timeout=REQUEST_TIMEOUT)
+        resp = session.get(f"{base_of(session)}/api/v1/planner/items", params=params, timeout=REQUEST_TIMEOUT)
     raw_items = _parse_canvas_json_or_raise(resp)
 
     schedule: list[dict] = []
@@ -218,7 +264,7 @@ def fetch_courses(session: requests.Session) -> list[dict]:
     """수강 중인 과목 목록을 가져온다 (설정 화면에서 과목 필터를 고를 때 씀)."""
     with _step("과목 목록 조회"):
         resp = session.get(
-            "https://lms.handong.edu/api/v1/courses",
+            f"{base_of(session)}/api/v1/courses",
             params={"enrollment_state": "active", "per_page": "100"},
             timeout=REQUEST_TIMEOUT,
         )
@@ -253,7 +299,7 @@ def fetch_announcements(session: requests.Session, courses: list[dict], days: in
         "per_page": "50",
     }
     with _step("공지사항 조회"):
-        resp = session.get("https://lms.handong.edu/api/v1/announcements", params=params, timeout=REQUEST_TIMEOUT)
+        resp = session.get(f"{base_of(session)}/api/v1/announcements", params=params, timeout=REQUEST_TIMEOUT)
     raw_items = _parse_canvas_json_or_raise(resp)
 
     out: list[dict] = []
