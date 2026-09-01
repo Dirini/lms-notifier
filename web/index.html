@@ -131,18 +131,6 @@
     </div>
   </section>
 
-  <section class="card" id="run-card">
-    <div class="card-head">
-      <h2 class="card-title"><span class="step-num">4</span>지금 확인</h2>
-    </div>
-    <p class="card-desc">잘 되는지 한 번 보내볼게요. 텔레그램에 오면 설정 끝이에요.</p>
-    <p class="locked-hint">먼저 1번과 3번을 연결하세요.</p>
-    <div class="run-body">
-      <button class="btn solid full" id="run-btn">지금 확인해서 보내기</button>
-      <div class="result-box" id="run-result" style="display:none"></div>
-    </div>
-  </section>
-
   <section class="card" id="notify-card">
     <div class="card-head">
       <h2 class="card-title">알림 받기</h2>
@@ -194,6 +182,21 @@
           <pre class="preview-body" data-preview="detailed"></pre>
         </div>
       </div>
+    </div>
+  </section>
+
+  <section class="card" id="run-card">
+    <div class="card-head">
+      <h2 class="card-title"><span class="step-num">4</span>지금 확인</h2>
+    </div>
+    <p class="card-desc">설정이 끝났으면 여기서 보내봐요. 텔레그램에 오면 완료예요.</p>
+    <p class="locked-hint">먼저 1번과 3번을 연결하세요.</p>
+    <div class="run-body">
+      <button class="btn solid full" id="run-btn">지금 확인해서 보내기</button>
+      <p class="field-hint" style="margin:8px 0 0">새로 올라온 것만 보내요. 없으면 아무것도 안 가요.</p>
+      <button class="btn ghost full" type="button" id="telegram-test" style="margin-top:16px">테스트 메시지 보내기</button>
+      <p class="field-hint" style="margin:8px 0 0">새 글이 없어도 예시 알림을 1건 보내 모양을 확인해요.</p>
+      <div class="result-box" id="run-result" style="display:none"></div>
     </div>
   </section>
 

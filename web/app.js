@@ -509,6 +509,16 @@ $("#telegram-form").addEventListener("submit", async (e) => {
   await refreshFlowState();
 });
 
+$("#telegram-test")?.addEventListener("click", async () => {
+  const btn = $("#telegram-test");
+  const stop = startLoading(btn);
+  const result = await api("/api/test-send", { method: "POST", body: {} });
+  stop();
+  btn.disabled = false;
+  btn.textContent = "테스트 메시지 1건 보내기";
+  showToast(result.ok ? "테스트 메시지를 보냈어요" : (result.error || "보내지 못했어요"));
+});
+
 $("#telegram-disconnect").addEventListener("click", async () => {
   await api("/api/telegram/disconnect", { method: "POST", body: {} });
   showToast("연결을 해제했어요");

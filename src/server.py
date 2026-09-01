@@ -359,6 +359,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._handle_chat_id(body)
         if path == "/api/run":
             return self._handle_run(body)
+        if path == "/api/test-send":
+            return self._handle_test_send(body)
         if path == "/api/prefs":
             return self._handle_prefs_save(body)
         if path == "/api/courses/refresh":
@@ -456,6 +458,22 @@ class Handler(BaseHTTPRequestHandler):
             return self._send_json(200, {"error": str(exc)})
         data = prefs.set_known_courses(courses)
         return self._send_json(200, data)
+
+    def _handle_test_send(self, body: dict):
+        """테스트용 — 텔레그램 발송이 되는지 딱 1건만 보낸다.
+        state.json 을 건드리지 않아 실제 알림 흐름에 영향이 없고, 새 항목이 없어도 항상 보낸다."""
+        tg = secrets_store.get_telegram()
+        if not tg:
+            return self._send_json(200, {"ok": False, "error": "먼저 텔레그램을 연결하세요"})
+        # 진짜 알림과 똑같은 형식으로 보낸다 (표본 데이터). 사용자가 고른 간단히/자세히를 따른다.
+        fmt = prefs.load().get("message_format", "detailed")
+        message = message_preview()[fmt]
+        message += "\n\n— 테스트 메시지예요. 실제로는 새로 올라온 것만 이렇게 와요."
+        try:
+            telegram.send_message(tg["bot_token"], tg["chat_id"], message)
+        except Exception as exc:  # noqa: BLE001 — 발송 실패 사유를 화면에 그대로 보여준다
+            return self._send_json(200, {"ok": False, "error": telegram.scrub(exc, tg["bot_token"])})
+        return self._send_json(200, {"ok": True})
 
     def _handle_run(self, body: dict):
         try:
