@@ -85,14 +85,23 @@
     <div class="help-panel" id="telegram-help" hidden>
       <p class="help-title">텔레그램 봇 처음 만드는 법 <span class="help-time">· 2분이면 돼요</span></p>
       <ol class="help-steps">
-        <li>텔레그램 앱에서 <b>@BotFather</b> 를 검색해 대화를 시작해요.</li>
-        <li><code>/newbot</code> 을 보내고, 봇 이름과 아이디(<code>_bot</code> 으로 끝나야 해요)를 정해요.</li>
-        <li>BotFather 가 주는 <b>토큰</b>(<code>1234:Abc…</code> 모양)을 복사해 아래 <b>봇 토큰</b> 칸에 붙여넣어요.</li>
-        <li>방금 만든 <b>내 봇</b>을 찾아 아무 메시지나 한 번 보내요. (이걸 해야 chat_id 를 알 수 있어요)</li>
-        <li>아래 <b>chat_id 확인</b> 버튼을 누르면 자동으로 채워져요.</li>
-        <li><b>연결하기</b> → 확인 메시지가 봇에게 오면 끝이에요.</li>
+        <li><b>BotFather 열기</b> —
+          <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer">t.me/BotFather</a>
+          를 누르면 텔레그램에서 대화창이 열려요. (파란 체크가 붙은 공식 계정이 맞는지 확인)</li>
+        <li><b>봇 만들기</b> — 대화창에 <code>/newbot</code> 을 보내요.</li>
+        <li><b>봇 이름</b> — 아무 이름이나 정해요. (예: <code>내 LMS 알리미</code>)</li>
+        <li><b>봇 아이디</b> — 반드시 <code>_bot</code> 으로 끝나야 해요. (예: <code>hgu_lms_min_bot</code>)
+          <span class="help-sub">이미 쓰는 이름이면 거절돼요. 그럼 앞에 아무 글자나 붙여 다시 시도하세요.</span></li>
+        <li><b>토큰 복사</b> — BotFather 가 <code>1234567:AAExx...</code> 모양의 토큰을 줘요.
+          그걸 복사해 아래 <b>봇 토큰</b> 칸에 붙여넣어요.
+          <span class="help-sub">이 토큰은 비밀번호와 같아요. 남에게 주지 말고 각자 만드세요.</span></li>
+        <li><b>내 봇 열기</b> — BotFather 가 준 <code>t.me/…_bot</code> 링크를 누르면 내 봇 대화창이 열려요.
+          거기서 <b>시작</b>(Start) 버튼을 누르거나 아무 메시지나 한 번 보내요.
+          <span class="help-sub">이걸 해야 봇이 "누구에게 보낼지"를 알 수 있어요. 안 하면 다음 단계가 비어 나와요.</span></li>
+        <li><b>chat_id 확인</b> — 방금 메시지를 보낸 <b>직후</b>, 아래 <b>chat_id 확인</b> 버튼을 누르면 자동으로 채워져요.</li>
+        <li><b>연결하기</b> — 확인 메시지가 봇에게 오면 끝이에요.</li>
       </ol>
-      <p class="help-note">봇 토큰은 남에게 주지 말고 각자 만들어요. 토큰이 있으면 누구나 그 봇을 조종할 수 있어요.</p>
+      <p class="help-note">잘 안 되면: ① 봇에게 메시지를 먼저 보냈는지 ② 토큰을 공백 없이 붙여넣었는지 확인하세요.</p>
     </div>
     <p class="locked-hint">먼저 1번 LMS 계정을 연결하세요.</p>
 
