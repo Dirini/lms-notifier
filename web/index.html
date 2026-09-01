@@ -91,14 +91,18 @@
     <p class="locked-hint">먼저 1번 LMS 계정을 연결하세요.</p>
 
     <div class="filters-body">
-      <div class="filter-group-label">글 유형</div>
+      <div class="group">
+        <div class="group-label">글 유형</div>
       <div class="chip-row" id="type-chips"></div>
 
-      <div class="filter-group-label" style="margin-top:20px">과목</div>
+      </div>
+      <div class="group">
+        <div class="group-label">과목</div>
       <div id="course-list" class="course-list">
         <div class="empty-line">아직 과목 목록을 안 가져왔어요</div>
       </div>
-      <button class="btn ghost" type="button" id="refresh-courses" style="margin-top:8px">과목 불러오기</button>
+      <button class="btn ghost" type="button" id="refresh-courses">과목 불러오기</button>
+      </div>
     </div>
   </section>
 
@@ -126,7 +130,7 @@
           <label for="chat-id">chat_id</label>
           <input id="chat-id" name="chat_id" placeholder="아래 버튼으로 확인" />
         </div>
-        <div class="row" style="margin-bottom:14px">
+        <div class="row" style="margin-bottom:16px">
           <button class="btn ghost" type="button" id="fetch-chat-id">봇에게 메시지 보낸 뒤 chat_id 확인</button>
         </div>
         <p class="error-text" id="telegram-error" style="display:none"></p>
@@ -139,20 +143,27 @@
     <div class="card-head">
       <h2 class="card-title"><span class="step-num">4</span>지금 확인</h2>
     </div>
-    <p class="card-desc">앞으로 7일치를 지금 바로 확인해요.</p>
+    <p class="card-desc">잘 되는지 한 번 보내볼게요. 텔레그램에 오면 설정 끝이에요.</p>
     <p class="locked-hint">먼저 1번과 3번을 연결하세요.</p>
     <div class="run-body">
       <button class="btn solid full" id="run-btn">지금 확인해서 보내기</button>
       <div class="result-box" id="run-result" style="display:none"></div>
+    </div>
+  </section>
 
-      <div class="filter-group-label" style="margin-top:20px">자동 확인</div>
-      <p class="card-desc" style="margin:0 0 10px">정해둔 주기나 시각에 알아서 확인해요.</p>
+  <section class="card" id="notify-card">
+    <div class="card-head">
+      <h2 class="card-title">알림 받기</h2>
+    </div>
+    <p class="card-desc">언제, 어떤 모양으로 받을지 정해요.</p>
+
+    <div class="group">
+      <div class="group-label">확인 주기</div>
       <div class="note">
         <span class="note-icon">💡</span>
         <div><b>이 창이 켜져 있을 때만 확인해요.</b>
         꺼져 있는 동안 놓친 글은 다음 확인 때 같이 보내드려요.</div>
       </div>
-
       <div class="seg-row" id="schedule-mode-seg">
         <button type="button" class="seg-item" data-mode="off">끄기</button>
         <button type="button" class="seg-item" data-mode="interval">반복 주기</button>
@@ -165,40 +176,41 @@
 
       <div id="mode-fixed" class="schedule-sub" style="display:none">
         <div class="chip-row" id="fixed-times-chips"></div>
-        <div class="row" style="margin-top:10px">
+        <div class="row" style="margin-top:12px">
           <input type="time" id="fixed-time-input" class="input time-input" />
           <button type="button" class="btn ghost" id="add-fixed-time">추가</button>
         </div>
         <p class="field-hint">매일 이 시각에 확인해요. 여러 개 추가할 수 있어요.</p>
       </div>
 
-      <p class="field-hint" id="next-run-hint" style="margin-top:10px"></p>
+      <p class="field-hint" id="next-run-hint"></p>
+    </div>
 
-      <h3 style="font-size:13px;font-weight:600;color:var(--tds-fg-secondary);margin:20px 0 8px">알림 내용</h3>
-      <p class="field-hint" style="margin-top:0">둘 중 원하는 모양을 고르세요. 실제로 오는 메시지예요.</p>
-      <div class="format-choices" id="format-seg">
-        <button type="button" class="format-choice" data-format="simple">
-          <span class="format-choice-head">
-            <span class="format-choice-name">간단히</span>
-            <span class="format-choice-mark" aria-hidden="true"></span>
-          </span>
-          <span class="format-choice-desc">날짜와 제목만. 제출한 과제는 빼요.</span>
+    <div class="group">
+      <div class="group-label">알림 내용</div>
+      <div class="seg-row" id="format-seg">
+        <button type="button" class="seg-item" data-format="simple">간단히</button>
+        <button type="button" class="seg-item" data-format="detailed">자세히</button>
+      </div>
+      <div class="preview-pair">
+        <div class="preview-item">
+          <div class="preview-label">간단히<span class="preview-state" data-state="simple"></span></div>
           <pre class="preview-body" data-preview="simple"></pre>
-        </button>
-        <button type="button" class="format-choice" data-format="detailed">
-          <span class="format-choice-head">
-            <span class="format-choice-name">자세히</span>
-            <span class="format-choice-mark" aria-hidden="true"></span>
-          </span>
-          <span class="format-choice-desc">분류·과목·마감·제출 여부까지.</span>
+        </div>
+        <div class="preview-item">
+          <div class="preview-label">자세히<span class="preview-state" data-state="detailed"></span></div>
           <pre class="preview-body" data-preview="detailed"></pre>
-        </button>
+        </div>
       </div>
+    </div>
+  </section>
 
-      <h3 style="font-size:13px;font-weight:600;color:var(--tds-fg-secondary);margin:20px 0 4px">실행 이력</h3>
-      <div class="run-list" id="run-list">
-        <div class="empty-line">아직 실행한 적 없어요</div>
-      </div>
+  <section class="card" id="history-card">
+    <div class="card-head">
+      <h2 class="card-title">실행 이력</h2>
+    </div>
+    <div class="run-list" id="run-list">
+      <div class="empty-line">아직 실행한 적 없어요</div>
     </div>
   </section>
 </div>

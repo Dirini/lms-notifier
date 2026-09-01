@@ -245,13 +245,17 @@ async function saveSchedule(partial) {
 let formatPreviews = null;
 
 function renderFormatUI(fmt) {
-  document.querySelectorAll("#format-seg .format-choice").forEach((b) =>
+  document.querySelectorAll("#format-seg .seg-item").forEach((b) =>
     b.setAttribute("aria-pressed", String(b.dataset.format === fmt)));
   // 두 미리보기를 항상 같이 채운다 — 고르지 않고도 비교할 수 있게
   document.querySelectorAll("[data-preview]").forEach((el) => {
     el.textContent = formatPreviews
       ? (formatPreviews[el.dataset.preview] || "")
       : "불러오는 중…";
+  });
+  // 어느 쪽으로 보내는지는 색이 아니라 말로 알린다
+  document.querySelectorAll("[data-state]").forEach((el) => {
+    el.textContent = el.dataset.state === fmt ? "· 지금 이 모양으로 보내요" : "";
   });
 }
 
@@ -264,7 +268,7 @@ async function loadFormatPreviews() {
   renderFormatUI(currentPrefs?.message_format || "detailed");
 }
 
-document.querySelectorAll("#format-seg .format-choice").forEach((btn) =>
+document.querySelectorAll("#format-seg .seg-item").forEach((btn) =>
   btn.addEventListener("click", async () => {
     const fmt = btn.dataset.format;
     renderFormatUI(fmt);   // 먼저 반영해 눌린 느낌을 준다
