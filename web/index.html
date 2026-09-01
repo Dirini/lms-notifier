@@ -175,14 +175,24 @@
       <p class="field-hint" id="next-run-hint" style="margin-top:10px"></p>
 
       <h3 style="font-size:13px;font-weight:600;color:var(--tds-fg-secondary);margin:20px 0 8px">알림 내용</h3>
-      <div class="seg-row" id="format-seg">
-        <button type="button" class="seg-item" data-format="simple">간단히</button>
-        <button type="button" class="seg-item" data-format="detailed">자세히</button>
-      </div>
-      <p class="field-hint" id="format-hint" style="margin-top:8px"></p>
-      <div class="preview" id="format-preview" aria-live="polite">
-        <div class="preview-label">이렇게 와요</div>
-        <pre class="preview-body" id="format-preview-body"></pre>
+      <p class="field-hint" style="margin-top:0">둘 중 원하는 모양을 고르세요. 실제로 오는 메시지예요.</p>
+      <div class="format-choices" id="format-seg">
+        <button type="button" class="format-choice" data-format="simple">
+          <span class="format-choice-head">
+            <span class="format-choice-name">간단히</span>
+            <span class="format-choice-mark" aria-hidden="true"></span>
+          </span>
+          <span class="format-choice-desc">날짜와 제목만. 제출한 과제는 빼요.</span>
+          <pre class="preview-body" data-preview="simple"></pre>
+        </button>
+        <button type="button" class="format-choice" data-format="detailed">
+          <span class="format-choice-head">
+            <span class="format-choice-name">자세히</span>
+            <span class="format-choice-mark" aria-hidden="true"></span>
+          </span>
+          <span class="format-choice-desc">분류·과목·마감·제출 여부까지.</span>
+          <pre class="preview-body" data-preview="detailed"></pre>
+        </button>
       </div>
 
       <h3 style="font-size:13px;font-weight:600;color:var(--tds-fg-secondary);margin:20px 0 4px">실행 이력</h3>

@@ -241,20 +241,18 @@ async function saveSchedule(partial) {
   return true;
 }
 
-const FORMAT_HINT = {
-  simple: "날짜와 제목만 한 줄씩. 이미 제출한 과제는 빼고 보내요.",
-  detailed: "분류·과목·마감 시각·제출 여부까지 모두 담아 보내요.",
-};
-
 // 미리보기는 서버가 실제 전송 함수로 만들어 준다 — 화면에 예시를 적어두면 포맷이 바뀔 때 어긋난다
 let formatPreviews = null;
 
 function renderFormatUI(fmt) {
-  document.querySelectorAll("#format-seg .seg-item").forEach((b) =>
+  document.querySelectorAll("#format-seg .format-choice").forEach((b) =>
     b.setAttribute("aria-pressed", String(b.dataset.format === fmt)));
-  $("#format-hint").textContent = FORMAT_HINT[fmt] || "";
-  const body = $("#format-preview-body");
-  if (body) body.textContent = formatPreviews ? (formatPreviews[fmt] || "") : "불러오는 중…";
+  // 두 미리보기를 항상 같이 채운다 — 고르지 않고도 비교할 수 있게
+  document.querySelectorAll("[data-preview]").forEach((el) => {
+    el.textContent = formatPreviews
+      ? (formatPreviews[el.dataset.preview] || "")
+      : "불러오는 중…";
+  });
 }
 
 async function loadFormatPreviews() {
@@ -266,7 +264,7 @@ async function loadFormatPreviews() {
   renderFormatUI(currentPrefs?.message_format || "detailed");
 }
 
-document.querySelectorAll("#format-seg .seg-item").forEach((btn) =>
+document.querySelectorAll("#format-seg .format-choice").forEach((btn) =>
   btn.addEventListener("click", async () => {
     const fmt = btn.dataset.format;
     renderFormatUI(fmt);   // 먼저 반영해 눌린 느낌을 준다

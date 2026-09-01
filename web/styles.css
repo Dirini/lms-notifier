@@ -620,14 +620,55 @@ button:active::after {
 .auth-pane { margin-top: 16px; }
 
 
-/* 알림 형식 미리보기 — 실제로 오는 메시지 모양을 그대로 보여준다 */
-.preview { margin-top: 12px; }
-.preview-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--tds-fg-tertiary);
-  margin-bottom: 8px;
+/* 알림 형식 고르기 — 실제로 오는 메시지를 둘 다 보여주고 카드째 선택한다 */
+.format-choices { display: grid; gap: 12px; }
+@media (min-width: 640px) {
+  .format-choices { grid-template-columns: 1fr 1fr; }
 }
+.format-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  padding: 16px;
+  border-radius: var(--radius-l);
+  border: 1.5px solid var(--tds-line-default);
+  background: var(--tds-bg-primary);
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: border-color var(--dur-base) var(--ease-out),
+              background var(--dur-base) var(--ease-out);
+}
+.format-choice:hover { background: var(--tds-bg-secondary); }
+.format-choice[aria-pressed="true"] {
+  border-color: var(--tds-fg-brand);
+  background: var(--tds-bg-primary);
+}
+.format-choice-head { display: flex; align-items: center; justify-content: space-between; }
+.format-choice-name { font-size: 15px; font-weight: 600; color: var(--tds-fg-primary); }
+/* 선택 표시 — 체크가 들어오는 동그라미 */
+.format-choice-mark {
+  width: 20px; height: 20px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--tds-line-strong);
+  flex: 0 0 auto;
+  position: relative;
+}
+.format-choice[aria-pressed="true"] .format-choice-mark {
+  border-color: var(--tds-fg-brand);
+  background: var(--tds-fg-brand);
+}
+.format-choice[aria-pressed="true"] .format-choice-mark::after {
+  content: "";
+  position: absolute;
+  left: 6px; top: 2px;
+  width: 5px; height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.format-choice-desc { font-size: 13px; color: var(--tds-fg-tertiary); }
 .preview-body {
   margin: 0;
   background: var(--tds-bg-tertiary);
@@ -640,4 +681,5 @@ button:active::after {
   white-space: pre-wrap;
   word-break: break-word;
   min-height: 40px;
+  margin-top: 4px;
 }
