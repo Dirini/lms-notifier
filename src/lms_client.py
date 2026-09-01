@@ -8,7 +8,6 @@ import re
 import sys
 import time
 from contextlib import contextmanager
-from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
 import requests
@@ -18,89 +17,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 KST = ZoneInfo("Asia/Seoul")
 REQUEST_TIMEOUT = 15  # 초. 각 단계는 이 시간 안에 응답이 와야 한다 (학교 서버가 느리면 여기서 걸린다).
 SESSION_TTL = 25 * 60  # noqa: E262
-HANDONG_BASE = "https://lms.handong.edu"
-
-
-def base_of(session: requests.Session) -> str:
-    """이 세션이 바라보는 학교 Canvas 주소. 로그인 방식과 무관하게 세션에 붙여 둔다."""
-    return getattr(session, "base_url", HANDONG_BASE)
-
-
-def normalize_base(raw: str) -> str:
-    """사용자가 붙여넣는 형태(`lms.handong.edu`, `https://lms.handong.edu/`,
-    `https://lms.handong.edu/courses` 등)를 API 호출에 쓸 origin 으로 정리한다."""
-    value = (raw or "").strip()
-    if not value:
-        raise ValueError("학교 LMS 주소를 입력하세요")
-    if not value.startswith(("http://", "https://")):
-        value = "https://" + value
-    parsed = urlparse(value)
-    if parsed.scheme != "https" or not parsed.netloc:
-        raise ValueError("https:// 로 시작하는 학교 LMS 주소를 입력하세요")
-    return f"https://{parsed.netloc}"
-
-
-def token_session(base_url: str, token: str) -> requests.Session:
-    """Canvas 개인 액세스 토큰으로 붙는다. 학교 SSO 를 거치지 않으므로 어느 Canvas 학교든 동작하고,
-    비밀번호를 저장할 필요가 없다."""
-    base = normalize_base(base_url)
-    session = requests.session()
-    session.headers.update({
-        "User-Agent": "Mozilla/5.0 LMSNotifier/1.0",
-        "Accept": "application/json",
-        "Authorization": f"Bearer {token.strip()}",
-    })
-    session.base_url = base
-    with _step("토큰 확인"):
-        resp = session.get(f"{base}/api/v1/users/self", timeout=REQUEST_TIMEOUT)
-    if resp.status_code == 401:
-        raise LMSLoginError("토큰이 올바르지 않거나 만료됐어요. LMS에서 새 액세스 토큰을 발급받아 주세요.")
-    if resp.status_code != 200:
-        raise LMSLoginError(
-            f"이 주소는 Canvas LMS가 아닌 것 같아요 (응답 {resp.status_code}). "
-            "로그인 포털이 아니라, 브라우저에서 과목 목록이 보이는 주소를 넣어 주세요."
-        )
-    try:
-        me = _parse_canvas_json_or_raise(resp)
-    except LMSLoginError:
-        raise LMSLoginError(
-            "이 주소에서 Canvas API 응답을 받지 못했어요. 학교 LMS 주소가 맞는지 확인해 주세요."
-        ) from None
-    # JSON 이라고 다 Canvas 가 아니다 — 사용자 객체 모양인지까지 본다
-    if not isinstance(me, dict) or not me.get("id"):
-        raise LMSLoginError(
-            "이 주소는 Canvas LMS가 아닌 것 같아요. "
-            "로그인 포털이 아니라, 브라우저에서 과목 목록이 보이는 주소를 넣어 주세요."
-        )
-    return session  # 초. 로그인 세션을 이만큼 재사용해서, 매번 SSO 5단계를 다시 안 거치게 한다.
-
-_session_cache: dict[str, tuple[requests.Session, float]] = {}
-
-
-class LMSLoginError(RuntimeError):
-    pass
-
-
-@contextmanager
-def _step(name: str):
-    started = time.monotonic()
-    try:
-        yield
-    except requests.Timeout as exc:
-        elapsed = time.monotonic() - started
-        print(f"[lms_client] {name}: 시간 초과 ({elapsed:.1f}s)", file=sys.stderr)
-        raise LMSLoginError(f"'{name}' 단계에서 학교 서버 응답이 {REQUEST_TIMEOUT}초 넘게 없었습니다. 네트워크가 느리거나 서버가 응답하지 않는 것 같아요.") from exc
-    except requests.RequestException as exc:
-        elapsed = time.monotonic() - started
-        print(f"[lms_client] {name}: 네트워크 오류 ({elapsed:.1f}s) {exc}", file=sys.stderr)
-        raise LMSLoginError(f"'{name}' 단계에서 네트워크 오류가 발생했습니다: {exc}") from exc
-    else:
-        elapsed = time.monotonic() - started
-        print(f"[lms_client] {name}: {elapsed:.1f}s", file=sys.stderr)
-
-# 한동대 캔버스(LMS) 플래너가 다루는 유형 중 "일정"과 "공지사항"으로 나눠서 취급한다.
-SCHEDULE_TYPES = {"assignment", "quiz", "calendar_event", "discussion_topic", "planner_note"}
-ANNOUNCEMENT_TYPES = {"announcement"}
+BASE = "https://lms.handong.edu"
 
 
 def _format_pem(raw_key_block: str) -> bytes:
@@ -197,9 +114,8 @@ def login(student_id: str, password: str) -> requests.Session:
             timeout=REQUEST_TIMEOUT,
         )
 
-    session.base_url = HANDONG_BASE
     with _step("5/5 로그인 확인"):
-        check = session.get(f"{HANDONG_BASE}/api/v1/users/self", timeout=REQUEST_TIMEOUT)
+        check = session.get(f"{BASE}/api/v1/users/self", timeout=REQUEST_TIMEOUT)
     try:
         _strip_canvas_json(check.text)
     except (json.JSONDecodeError, ValueError) as exc:
@@ -239,7 +155,7 @@ def fetch_planner_items(session: requests.Session, days: int) -> tuple[list[dict
         "per_page": "100",
     }
     with _step("플래너 항목 조회"):
-        resp = session.get(f"{base_of(session)}/api/v1/planner/items", params=params, timeout=REQUEST_TIMEOUT)
+        resp = session.get(f"{BASE}/api/v1/planner/items", params=params, timeout=REQUEST_TIMEOUT)
     raw_items = _parse_canvas_json_or_raise(resp)
 
     schedule: list[dict] = []
@@ -275,7 +191,7 @@ def fetch_courses(session: requests.Session) -> list[dict]:
     """수강 중인 과목 목록을 가져온다 (설정 화면에서 과목 필터를 고를 때 씀)."""
     with _step("과목 목록 조회"):
         resp = session.get(
-            f"{base_of(session)}/api/v1/courses",
+            f"{BASE}/api/v1/courses",
             params={"enrollment_state": "active", "per_page": "100"},
             timeout=REQUEST_TIMEOUT,
         )
@@ -310,7 +226,7 @@ def fetch_announcements(session: requests.Session, courses: list[dict], days: in
         "per_page": "50",
     }
     with _step("공지사항 조회"):
-        resp = session.get(f"{base_of(session)}/api/v1/announcements", params=params, timeout=REQUEST_TIMEOUT)
+        resp = session.get(f"{BASE}/api/v1/announcements", params=params, timeout=REQUEST_TIMEOUT)
     raw_items = _parse_canvas_json_or_raise(resp)
 
     out: list[dict] = []

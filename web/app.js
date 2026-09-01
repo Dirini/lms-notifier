@@ -78,10 +78,7 @@ async function refreshAccount() {
     setPill(pill, "success", "완료");
     connected.style.display = "block";
     form.style.display = "none";
-    $("#account-masked").textContent = status.mode === "canvas"
-      ? `${status.base_url.replace(/^https:\/\//, "")} · ${status.masked}`
-      : status.masked;
-    if (status.mode) renderAuthMode(status.mode);
+    $("#account-masked").textContent = status.masked;
   } else {
     setPill(pill, "neutral", "연결 필요");
     connected.style.display = "none";
@@ -435,49 +432,17 @@ $("#refresh-courses").addEventListener("click", async () => {
 // 실제로 Canvas 인지 확인한 학교만 넣는다. 도메인을 추측해서 넣으면
 // 틀렸을 때 "우리 학교는 안 되는구나"로 오해받는다.
 // 확인 방법: /api/v1/users/self 가 Canvas 특유의 "Invalid access token." 을 돌려주고,
-// 이 앱이 쓰는 4개 엔드포인트(users/self·planner/items·courses·announcements)가 모두 401 인지.
-// 토큰이 없어 응답 본문 모양까지는 확인하지 못했으므로, 연결 단계에서 한 번 더 검증한다.
-const SCHOOLS = [
-  { name: "한동대학교", url: "lms.handong.edu" },
-  { name: "성균관대학교", url: "canvas.skku.edu" },
-  { name: "한양대학교", url: "canvas.hanyang.ac.kr" },
-  { name: "경북대학교", url: "canvas.knu.ac.kr" },
-];
-
-function renderSchoolOptions() {
-  const sel = $("#school");
-  if (!sel) return;
-  sel.innerHTML =
-    '<option value="">학교를 고르세요</option>' +
-    SCHOOLS.map((s) => `<option value="${escapeHtml(s.url)}">${escapeHtml(s.name)}</option>`).join("") +
-    '<option value="__custom__">목록에 없어요 (주소 직접 입력)</option>';
-  sel.addEventListener("change", () => {
-    const custom = sel.value === "__custom__";
-    $("#base-url-field").style.display = custom ? "block" : "none";
-    if (custom) $("#base-url").focus();
+// 텔레그램 도움말 (i) 토글
+(function () {
+  const btn = $("#telegram-help-btn"), panel = $("#telegram-help");
+  if (!btn || !panel) return;
+  btn.addEventListener("click", () => {
+    const open = panel.hasAttribute("hidden");
+    if (open) panel.removeAttribute("hidden");
+    else panel.setAttribute("hidden", "");
+    btn.setAttribute("aria-expanded", String(open));
   });
-}
-
-// 고른 학교(또는 직접 입력)의 주소
-function selectedBaseUrl() {
-  const sel = $("#school");
-  return sel.value === "__custom__" ? $("#base-url").value.trim() : sel.value;
-}
-
-// 로그인 방식 — canvas(액세스 토큰, 모든 Canvas 학교) / handong(학교 SSO)
-let authMode = "canvas";
-
-function renderAuthMode(mode) {
-  authMode = mode;
-  document.querySelectorAll("#auth-mode-seg .seg-item").forEach((b) =>
-    b.setAttribute("aria-pressed", String(b.dataset.auth === mode)));
-  $("#auth-canvas").style.display = mode === "canvas" ? "block" : "none";
-  $("#auth-handong").style.display = mode === "handong" ? "block" : "none";
-  $("#account-error").style.display = "none";
-}
-
-document.querySelectorAll("#auth-mode-seg .seg-item").forEach((btn) =>
-  btn.addEventListener("click", () => renderAuthMode(btn.dataset.auth)));
+})();
 
 $("#account-form").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -485,15 +450,7 @@ $("#account-form").addEventListener("submit", async (e) => {
   const submitBtn = $("#account-submit");
   errorEl.style.display = "none";
 
-  if (authMode === "canvas" && !selectedBaseUrl()) {
-    errorEl.textContent = "학교를 고르거나 LMS 주소를 입력하세요";
-    errorEl.style.display = "block";
-    return;
-  }
-
-  const body = authMode === "canvas"
-    ? { mode: "canvas", base_url: selectedBaseUrl(), token: $("#access-token").value.trim() }
-    : { mode: "handong", student_id: $("#student-id").value.trim(), password: $("#password").value };
+  const body = { student_id: $("#student-id").value.trim(), password: $("#password").value };
 
   const stop = startLoading(submitBtn);
   const result = await api("/api/account", { method: "POST", body });
@@ -506,7 +463,6 @@ $("#account-form").addEventListener("submit", async (e) => {
     return;
   }
   $("#password").value = "";
-  $("#access-token").value = "";
   showToast("LMS 계정이 연결됐어요");
   await refreshFlowState();
 });
@@ -592,7 +548,6 @@ async function refreshFlowState() {
 }
 
 (async function init() {
-  renderSchoolOptions();
   await refreshFlowState();
   await loadPrefs();
   await refreshRuns();

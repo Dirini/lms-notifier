@@ -10,7 +10,7 @@
 <div class="page">
   <div class="page-head">
     <h1>LMS 알리미</h1>
-    <p>학교 LMS의 새 과제·공지를 텔레그램으로 알려줘요.<br>입력한 정보는 이 컴퓨터 안에만 저장돼요. 공용 PC에서는 쓰지 마세요.</p>
+    <p>한동대 LMS의 새 과제·공지를 텔레그램으로 알려줘요.<br>학번·비밀번호는 이 컴퓨터 안에만 저장돼요. 공용 PC에서는 쓰지 마세요.</p>
   </div>
 
   <div class="banner" id="missed-banner" style="display:none"></div>
@@ -29,57 +29,20 @@
     </div>
 
     <form id="account-form">
-      <div class="seg-row" id="auth-mode-seg">
-        <button type="button" class="seg-item" data-auth="canvas">모든 학교</button>
-        <button type="button" class="seg-item" data-auth="handong">한동대</button>
+      <div class="field">
+        <label for="student-id">학번</label>
+        <input id="student-id" name="student_id" placeholder="20241234" autocomplete="username" />
       </div>
-
-      <div id="auth-canvas" class="auth-pane">
-        <div class="note">
-          <span class="note-icon">🔑</span>
-          <div>학교 LMS가 <b>Canvas</b>라면 어디든 돼요. LMS에서 발급한 액세스 토큰으로 연결하니
-          <b>비밀번호를 저장하지 않아요.</b></div>
-        </div>
-        <div class="field">
-          <label for="school">학교</label>
-          <select id="school" class="input"></select>
-        </div>
-        <div class="field" id="base-url-field" style="display:none">
-          <label for="base-url">학교 LMS 주소</label>
-          <input id="base-url" name="base_url" placeholder="lms.myschool.ac.kr" autocomplete="off" />
-          <p class="field-hint">로그인 포털 말고, <b>과목 목록이 보이는 화면</b>의 주소예요.</p>
-        </div>
-        <div class="field">
-          <label for="access-token">액세스 토큰</label>
-          <input id="access-token" name="token" type="password" placeholder="LMS에서 발급한 토큰" autocomplete="off" />
-        </div>
-        <div class="note">
-          <span class="note-icon">🔑</span>
-          <div><b>토큰 받는 법</b><br>
-          ① LMS 접속 → 왼쪽 맨 위 <b>내 프로필</b> 클릭 → <b>설정</b><br>
-          ② 페이지 <b>맨 아래</b>로 내려서 <b>승인된 통합</b> 찾기<br>
-          ③ <b>+ 새 액세스 토큰</b> → 목적에 아무 이름이나 → 생성<br>
-          ④ 이때 <b>딱 한 번만</b> 보이는 토큰을 복사해서 위에 붙여넣기</div>
-        </div>
+      <div class="field">
+        <label for="password">히즈넷 비밀번호</label>
+        <input id="password" name="password" type="password" placeholder="비밀번호" autocomplete="current-password" />
       </div>
-
-      <div id="auth-handong" class="auth-pane" style="display:none">
-        <div class="field">
-          <label for="student-id">학번</label>
-          <input id="student-id" name="student_id" placeholder="20241234" autocomplete="username" />
-        </div>
-        <div class="field">
-          <label for="password">히즈넷 비밀번호</label>
-          <input id="password" name="password" type="password" placeholder="비밀번호" autocomplete="current-password" />
-        </div>
-        <div class="note">
-          <span class="note-icon">🔒</span>
-          <div>자동 로그인을 위해 비밀번호가 이 컴퓨터의 파일에 <b>암호화 없이</b> 저장돼요.
-          본인만 읽을 수 있게 권한이 걸리지만, 공용 PC에서는 쓰지 마세요.
-          "연결 해제"를 누르면 파일에서 지워져요.</div>
-        </div>
+      <div class="note">
+        <span class="note-icon">🔒</span>
+        <div>자동 로그인을 위해 비밀번호가 이 컴퓨터의 파일에 <b>암호화 없이</b> 저장돼요.
+        본인만 읽을 수 있게 권한이 걸리지만, 공용 PC에서는 쓰지 마세요.
+        "연결 해제"를 누르면 파일에서 지워져요.</div>
       </div>
-
       <p class="error-text" id="account-error" style="display:none"></p>
       <button class="btn solid full" type="submit" id="account-submit">연결하기</button>
     </form>
@@ -111,8 +74,25 @@
 
   <section class="card" id="telegram-card">
     <div class="card-head">
-      <h2 class="card-title"><span class="step-num">3</span>텔레그램 알림</h2>
+      <h2 class="card-title">
+        <span class="step-num">3</span>텔레그램 알림
+        <button type="button" class="help-btn" id="telegram-help-btn" aria-expanded="false"
+          aria-controls="telegram-help" title="처음이면 눌러보세요">i</button>
+      </h2>
       <span class="pill neutral" id="telegram-pill">확인 중</span>
+    </div>
+
+    <div class="help-panel" id="telegram-help" hidden>
+      <p class="help-title">텔레그램 봇 처음 만드는 법 <span class="help-time">· 2분이면 돼요</span></p>
+      <ol class="help-steps">
+        <li>텔레그램 앱에서 <b>@BotFather</b> 를 검색해 대화를 시작해요.</li>
+        <li><code>/newbot</code> 을 보내고, 봇 이름과 아이디(<code>_bot</code> 으로 끝나야 해요)를 정해요.</li>
+        <li>BotFather 가 주는 <b>토큰</b>(<code>1234:Abc…</code> 모양)을 복사해 아래 <b>봇 토큰</b> 칸에 붙여넣어요.</li>
+        <li>방금 만든 <b>내 봇</b>을 찾아 아무 메시지나 한 번 보내요. (이걸 해야 chat_id 를 알 수 있어요)</li>
+        <li>아래 <b>chat_id 확인</b> 버튼을 누르면 자동으로 채워져요.</li>
+        <li><b>연결하기</b> → 확인 메시지가 봇에게 오면 끝이에요.</li>
+      </ol>
+      <p class="help-note">봇 토큰은 남에게 주지 말고 각자 만들어요. 토큰이 있으면 누구나 그 봇을 조종할 수 있어요.</p>
     </div>
     <p class="locked-hint">먼저 1번 LMS 계정을 연결하세요.</p>
 

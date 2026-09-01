@@ -105,22 +105,12 @@ def run(days: int, dry_run: bool) -> int:
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip() or telegram_cfg.get("bot_token", "")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip() or telegram_cfg.get("chat_id", "")
 
-    # 환경변수로 준 값이 저장된 계정보다 우선한다 (cron 등에서 덮어쓸 수 있게)
-    env_base = os.environ.get("LMS_BASE_URL", "").strip()
-    env_token = os.environ.get("LMS_ACCESS_TOKEN", "").strip()
     student_id = os.environ.get("HGU_ID", "").strip() or account.get("student_id", "")
     password = os.environ.get("HGU_PASSWORD", "") or account.get("password", "")
 
-    if env_base and env_token:
-        mode, base_url, token = "canvas", env_base, env_token
-    elif account.get("mode") == "canvas":
-        mode = "canvas"
-        base_url, token = account.get("base_url", ""), account.get("token", "")
-    elif student_id and password:
-        mode = "handong"
-    else:
+    if not student_id or not password:
         print("LMS 계정 정보가 없습니다. 웹 화면(src/server.py)에서 먼저 연결하거나, "
-              "환경변수(HGU_ID/HGU_PASSWORD 또는 LMS_BASE_URL/LMS_ACCESS_TOKEN)를 설정하세요.", file=sys.stderr)
+              ".env에 HGU_ID/HGU_PASSWORD를 설정하세요.", file=sys.stderr)
         return 2
 
     if not dry_run and (not bot_token or not chat_id):
@@ -128,12 +118,9 @@ def run(days: int, dry_run: bool) -> int:
         return 2
 
     try:
-        if mode == "canvas":
-            session = lms_client.token_session(base_url, token)
-        else:
-            session = lms_client.login(student_id, password)
+        session = lms_client.login(student_id, password)
     except lms_client.LMSLoginError as exc:
-        print(f"LMS 연결 실패: {exc}", file=sys.stderr)
+        print(f"LMS 로그인 실패: {exc}", file=sys.stderr)
         return 1
 
     schedule, announcements = lms_client.fetch_all(session, days)

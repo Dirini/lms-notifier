@@ -62,12 +62,7 @@ def account_status() -> dict:
     account = secrets_store.get_account()
     if not account:
         return {"connected": False}
-    if account.get("mode") == "canvas":
-        return {"connected": True, "mode": "canvas",
-                "masked": secrets_store.mask_token(account.get("token", "")),
-                "base_url": account.get("base_url", "")}
-    return {"connected": True, "mode": "handong",
-            "masked": secrets_store.mask_id(account["student_id"])}
+    return {"connected": True, "masked": secrets_store.mask_id(account["student_id"])}
 
 
 def telegram_status() -> dict:
@@ -79,10 +74,6 @@ def telegram_status() -> dict:
 
 def _fetch_with_retry(account: dict, fn):
     """캐시된 세션으로 먼저 시도하고, 세션이 만료돼서 실패하면 한 번만 새로 붙어서 다시 시도한다."""
-    if account.get("mode") == "canvas":
-        # 토큰 방식은 만료 개념이 없어 캐시도 재시도도 필요 없다
-        return fn(lms_client.token_session(account["base_url"], account["token"]))
-
     student_id, password = account["student_id"], account["password"]
     session = lms_client.get_session(student_id, password)
     try:
@@ -377,8 +368,6 @@ class Handler(BaseHTTPRequestHandler):
         return self._send_json(404, {"error": "not found"})
 
     def _handle_account_connect(self, body: dict):
-        if str(body.get("mode", "")).strip() == "canvas":
-            return self._handle_token_connect(body)
         student_id = str(body.get("student_id", "")).strip()
         password = str(body.get("password", ""))
         if not student_id or not password:
@@ -388,27 +377,7 @@ class Handler(BaseHTTPRequestHandler):
         except lms_client.LMSLoginError as exc:
             return self._send_json(200, {"ok": False, "error": str(exc)})
         secrets_store.set_account(student_id, password)
-        return self._send_json(200, {"ok": True, "mode": "handong",
-                                     "masked": secrets_store.mask_id(student_id)})
-
-    def _handle_token_connect(self, body: dict):
-        raw_base = str(body.get("base_url", "")).strip()
-        token = str(body.get("token", "")).strip()
-        if not raw_base or not token:
-            return self._send_json(400, {"error": "학교 LMS 주소와 액세스 토큰을 모두 입력하세요"})
-        try:
-            base_url = lms_client.normalize_base(raw_base)
-        except ValueError as exc:
-            return self._send_json(400, {"error": str(exc)})
-        try:
-            lms_client.token_session(base_url, token)
-        except lms_client.LMSLoginError as exc:
-            return self._send_json(200, {"ok": False, "error": str(exc)})
-        except Exception as exc:  # noqa: BLE001 — 주소 오타로 인한 접속 실패도 화면에 그대로 보여준다
-            return self._send_json(200, {"ok": False, "error": f"접속하지 못했어요: {str(exc)[:160]}"})
-        secrets_store.set_token_account(base_url, token)
-        return self._send_json(200, {"ok": True, "mode": "canvas", "base_url": base_url,
-                                     "masked": secrets_store.mask_token(token)})
+        return self._send_json(200, {"ok": True, "masked": secrets_store.mask_id(student_id)})
 
     def _handle_telegram_connect(self, body: dict):
         bot_token = str(body.get("bot_token", "")).strip()
