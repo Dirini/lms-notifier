@@ -71,7 +71,10 @@ def _format_detailed(new_schedule: list[dict], new_announcements: list[dict]) ->
 
 
 def _format_simple(new_schedule: list[dict], new_announcements: list[dict]) -> str:
-    """한 줄에 하나씩, 날짜와 제목만. 이미 제출한 항목은 빼서 할 일만 남긴다."""
+    """한 줄에 하나씩. 이미 제출한 항목은 빼서 할 일만 남긴다.
+
+    제목만으로는 어느 수업 건인지 알 수 없어서 과목명을 함께 붙인다 —
+    분류·제출 여부처럼 없어도 되는 것만 덜어내는 게 '간단히'의 목적이다."""
     pending = [i for i in new_schedule if not i.get("submitted")]
     counts = []
     if pending:
@@ -79,10 +82,9 @@ def _format_simple(new_schedule: list[dict], new_announcements: list[dict]) -> s
     if new_announcements:
         counts.append(f"공지 {len(new_announcements)}")
     lines = ["LMS " + (" · ".join(counts) if counts else "새 소식")]
-    for item in pending:
-        lines.append(f"· {format_due(item['date'])} {item['title']}")
-    for item in new_announcements:
-        lines.append(f"· {format_due(item['date'])} {item['title']}")
+    for item in pending + new_announcements:
+        course = f" ({item['course']})" if item.get("course") else ""
+        lines.append(f"· {format_due(item['date'])} {item['title']}{course}")
     if not pending and not new_announcements:
         # 새 일정이 전부 제출 완료라 보여줄 게 없을 때
         lines.append("· 새로 생긴 항목이 모두 제출 완료 상태예요")

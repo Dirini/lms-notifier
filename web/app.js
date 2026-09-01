@@ -223,6 +223,15 @@ async function refreshSchedule() {
   renderScheduleUI();
 }
 
+// 저장 버튼이 없는 화면이라(DESIGN.md: 수동 저장 버튼 없음) 저장됐다는 사실을 말로 알려준다.
+// 무엇으로 저장됐는지까지 담아야 "눌렀는데 뭐가 바뀐 거지" 하는 상태가 안 생긴다.
+function scheduleSavedMessage(sc) {
+  if (sc.schedule_mode === "off") return "자동 확인을 껐어요";
+  if (sc.schedule_mode === "interval") return `${sc.poll_minutes}분마다 확인할게요`;
+  const times = (sc.fixed_times || []).join(", ");
+  return times ? `매일 ${times}에 확인할게요` : "확인할 시각을 골라 주세요";
+}
+
 async function saveSchedule(partial) {
   const body = {
     schedule_mode: currentSchedule.schedule_mode,
@@ -238,6 +247,7 @@ async function saveSchedule(partial) {
   currentSchedule = result;
   visiblePanel = null;
   renderScheduleUI();
+  showToast(scheduleSavedMessage(result));
   return true;
 }
 
@@ -274,6 +284,7 @@ document.querySelectorAll("#format-seg .seg-item").forEach((btn) =>
     renderFormatUI(fmt);   // 먼저 반영해 눌린 느낌을 준다
     try {
       await api("/api/message-format", { method: "POST", body: { format: fmt } });
+      showToast(fmt === "simple" ? "간단히 보낼게요" : "자세히 보낼게요");
     } catch (err) {
       showToast("알림 형식을 저장하지 못했어요");
     }
@@ -319,10 +330,7 @@ $("#add-fixed-time").addEventListener("click", async () => {
     schedule_mode: "fixed",
     fixed_times: [...currentSchedule.fixed_times, input.value].sort(),
   });
-  if (ok) {
-    input.value = "";
-    showToast("추가했어요");
-  }
+  if (ok) input.value = "";   // 저장 안내는 saveSchedule 이 더 구체적으로 띄운다
 });
 
 function renderTypeChips() {
@@ -364,11 +372,17 @@ function updateFiltersPill() {
 }
 
 async function savePrefs() {
-  currentPrefs = await api("/api/prefs", {
-    method: "POST",
-    body: { course_ids: currentPrefs.course_ids, types: currentPrefs.types },
-  });
+  try {
+    currentPrefs = await api("/api/prefs", {
+      method: "POST",
+      body: { course_ids: currentPrefs.course_ids, types: currentPrefs.types },
+    });
+  } catch (err) {
+    showToast("설정을 저장하지 못했어요");
+    return;
+  }
   updateFiltersPill();
+  showToast("저장했어요");
 }
 
 function toggleType(key) {
