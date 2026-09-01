@@ -41,24 +41,26 @@
           <b>비밀번호를 저장하지 않아요.</b></div>
         </div>
         <div class="field">
+          <label for="school">학교</label>
+          <select id="school" class="input"></select>
+        </div>
+        <div class="field" id="base-url-field" style="display:none">
           <label for="base-url">학교 LMS 주소</label>
           <input id="base-url" name="base_url" placeholder="lms.myschool.ac.kr" autocomplete="off" />
           <p class="field-hint">로그인 포털 말고, <b>과목 목록이 보이는 화면</b>의 주소예요.</p>
         </div>
         <div class="field">
           <label for="access-token">액세스 토큰</label>
-          <input id="access-token" name="token" type="password" placeholder="LMS 설정에서 발급한 토큰" autocomplete="off" />
+          <input id="access-token" name="token" type="password" placeholder="LMS에서 발급한 토큰" autocomplete="off" />
         </div>
-        <details class="howto">
-          <summary>토큰은 어디서 발급하나요?</summary>
-          <ol>
-            <li>브라우저로 학교 LMS에 로그인해요.</li>
-            <li>왼쪽 <b>계정(Account)</b> → <b>설정(Settings)</b>으로 들어가요.</li>
-            <li>아래 <b>승인된 통합(Approved Integrations)</b>에서 <b>+ 새 액세스 토큰</b>을 눌러요.</li>
-            <li>용도에 아무 이름이나 적고 만든 뒤, <b>딱 한 번만 보이는 토큰</b>을 복사해 위에 붙여넣어요.</li>
-          </ol>
-          <p>이 항목이 없다면 학교가 토큰 발급을 막아둔 거예요. 그때는 이 방식으로 연결할 수 없어요.</p>
-        </details>
+        <div class="note">
+          <span class="note-icon">🔑</span>
+          <div><b>토큰 받는 법</b><br>
+          ① LMS 접속 → 왼쪽 맨 위 <b>내 프로필</b> 클릭 → <b>설정</b><br>
+          ② 페이지 <b>맨 아래</b>로 내려서 <b>승인된 통합</b> 찾기<br>
+          ③ <b>+ 새 액세스 토큰</b> → 목적에 아무 이름이나 → 생성<br>
+          ④ 이때 <b>딱 한 번만</b> 보이는 토큰을 복사해서 위에 붙여넣기</div>
+        </div>
       </div>
 
       <div id="auth-handong" class="auth-pane" style="display:none">

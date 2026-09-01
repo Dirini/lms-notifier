@@ -662,3 +662,6 @@ button:active::after {
 
 .group .chip-row + .btn,
 .group .course-list + .btn { margin-top: 12px; }
+
+/* select 도 input 과 같은 높이·모양으로 (기본 화살표는 남긴다) */
+select.input { appearance: auto; cursor: pointer; }

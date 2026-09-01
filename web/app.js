@@ -430,6 +430,33 @@ $("#refresh-courses").addEventListener("click", async () => {
   showToast(`과목 ${result.known_courses.length}개를 가져왔어요`);
 });
 
+// 실제로 Canvas 인지 확인한 학교만 넣는다. 도메인을 추측해서 넣으면
+// 틀렸을 때 "우리 학교는 안 되는구나"로 오해받는다.
+const SCHOOLS = [
+  { name: "한동대학교", url: "lms.handong.edu" },
+  { name: "성균관대학교", url: "canvas.skku.edu" },
+];
+
+function renderSchoolOptions() {
+  const sel = $("#school");
+  if (!sel) return;
+  sel.innerHTML =
+    '<option value="">학교를 고르세요</option>' +
+    SCHOOLS.map((s) => `<option value="${escapeHtml(s.url)}">${escapeHtml(s.name)}</option>`).join("") +
+    '<option value="__custom__">목록에 없어요 (주소 직접 입력)</option>';
+  sel.addEventListener("change", () => {
+    const custom = sel.value === "__custom__";
+    $("#base-url-field").style.display = custom ? "block" : "none";
+    if (custom) $("#base-url").focus();
+  });
+}
+
+// 고른 학교(또는 직접 입력)의 주소
+function selectedBaseUrl() {
+  const sel = $("#school");
+  return sel.value === "__custom__" ? $("#base-url").value.trim() : sel.value;
+}
+
 // 로그인 방식 — canvas(액세스 토큰, 모든 Canvas 학교) / handong(학교 SSO)
 let authMode = "canvas";
 
@@ -451,8 +478,14 @@ $("#account-form").addEventListener("submit", async (e) => {
   const submitBtn = $("#account-submit");
   errorEl.style.display = "none";
 
+  if (authMode === "canvas" && !selectedBaseUrl()) {
+    errorEl.textContent = "학교를 고르거나 LMS 주소를 입력하세요";
+    errorEl.style.display = "block";
+    return;
+  }
+
   const body = authMode === "canvas"
-    ? { mode: "canvas", base_url: $("#base-url").value.trim(), token: $("#access-token").value.trim() }
+    ? { mode: "canvas", base_url: selectedBaseUrl(), token: $("#access-token").value.trim() }
     : { mode: "handong", student_id: $("#student-id").value.trim(), password: $("#password").value };
 
   const stop = startLoading(submitBtn);
@@ -552,6 +585,7 @@ async function refreshFlowState() {
 }
 
 (async function init() {
+  renderSchoolOptions();
   await refreshFlowState();
   await loadPrefs();
   await refreshRuns();
