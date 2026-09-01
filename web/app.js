@@ -432,9 +432,16 @@ $("#refresh-courses").addEventListener("click", async () => {
 
 // 실제로 Canvas 인지 확인한 학교만 넣는다. 도메인을 추측해서 넣으면
 // 틀렸을 때 "우리 학교는 안 되는구나"로 오해받는다.
+// 실제로 Canvas 인지 확인한 학교만 넣는다. 도메인을 추측해서 넣으면
+// 틀렸을 때 "우리 학교는 안 되는구나"로 오해받는다.
+// 확인 방법: /api/v1/users/self 가 Canvas 특유의 "Invalid access token." 을 돌려주고,
+// 이 앱이 쓰는 4개 엔드포인트(users/self·planner/items·courses·announcements)가 모두 401 인지.
+// 토큰이 없어 응답 본문 모양까지는 확인하지 못했으므로, 연결 단계에서 한 번 더 검증한다.
 const SCHOOLS = [
   { name: "한동대학교", url: "lms.handong.edu" },
   { name: "성균관대학교", url: "canvas.skku.edu" },
+  { name: "한양대학교", url: "canvas.hanyang.ac.kr" },
+  { name: "경북대학교", url: "canvas.knu.ac.kr" },
 ];
 
 function renderSchoolOptions() {
