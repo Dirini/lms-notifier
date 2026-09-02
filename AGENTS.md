@@ -12,25 +12,33 @@
 
 ## 0. 먼저 확인할 것
 
+설치 스크립트가 Python 유무를 알아서 확인하지만, 미리 보려면:
+
 ```bash
-python3 --version    # 3.9 이상이어야 합니다
+python3 --version    # 3.9 이상이면 바로 설치 가능
 ```
 
-3.9 미만이거나 `python3`가 없으면, 설치를 진행하지 말고 사용자에게 Python 설치를 먼저 안내하세요.
+`python3`가 없거나 3.9 미만이어도 아래 설치를 시도하세요 — 스크립트가 없으면 안내를 띄웁니다.
 
 ## 1. 설치 + 실행 (이 한 줄이 전부)
 
+Git 이 없어도 됩니다. 아래 한 줄이 코드 다운로드 → 가상환경 → 패키지 설치 → 서버 실행까지 다 합니다.
+**서버는 떠 있는 동안 끝나지 않으므로(정상), 반드시 백그라운드로 실행하세요.**
+
 ```bash
-git clone https://github.com/Dirini/lms-notifier.git
-cd lms-notifier
-python3 bootstrap.py
+# 맥 (백그라운드로 실행 — AI 세션이 멈추지 않게)
+nohup bash -c 'curl -fsSL https://raw.githubusercontent.com/Dirini/lms-notifier/main/install.command | bash' >/tmp/lms-install.log 2>&1 &
 ```
 
-`bootstrap.py`가 가상환경 생성 → 패키지 설치 → 웹 서버 실행 → 브라우저 열기까지 합니다.
-브라우저가 자동으로 안 열리면 `http://127.0.0.1:8912`를 열라고 안내하세요.
+몇 초 뒤 `curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8912/` 가 `200` 이면 성공입니다.
+브라우저가 자동으로 안 열렸으면 사용자에게 `http://127.0.0.1:8912` 를 열라고 안내하세요.
 
-**이 명령은 서버가 떠 있는 동안 끝나지 않습니다(정상입니다).** 백그라운드로 돌리거나,
-별도 터미널에서 실행하세요. 창을 닫으면 자동 확인도 같이 멈춥니다.
+- Python 3.9+ 가 없으면 설치 스크립트가 python.org 다운로드 페이지를 열고 멈춥니다.
+  그때는 사용자에게 Python 설치를 안내하고, 설치되면 위 명령을 다시 실행하세요.
+- 실패 시 `/tmp/lms-install.log` 를 확인하세요.
+
+> 윈도우에서는 위 curl 방식 대신, 사용자가 ZIP 을 받아 `install.bat` 을 더블클릭하도록 안내하세요
+> (README 방법 A-2). AI 가 대신 실행하려면 PowerShell 로 같은 ZIP 을 받아 `python bootstrap.py` 를 돌리면 됩니다.
 
 ## 2. 절대 하지 말 것 (중요)
 
