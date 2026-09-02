@@ -5,16 +5,40 @@
 
 ## 1. 설치
 
-Python 3.9 이상만 있으면 됩니다.
+**필요한 것: Python 3.9 이상.** Git은 필요 없습니다.
+
+### 방법 A — 가장 쉬움 (Git 없어도 됨, 추천)
+
+1. 아래 링크에서 코드를 **ZIP으로 내려받아** 압축을 풉니다.
+   👉 <https://github.com/Dirini/lms-notifier/archive/refs/heads/main.zip>
+2. 풀린 폴더 안에서 자기 컴퓨터에 맞는 파일을 **더블클릭**합니다.
+   - **맥**: `install.command`
+     - "확인되지 않은 개발자" 경고가 뜨면 파일을 **우클릭 → 열기 → 열기**.
+   - **윈도우**: `install.bat`
+     - "Windows의 PC 보호" 창이 뜨면 **추가 정보 → 실행**.
+3. Python이 없으면 받는 곳을 자동으로 열어줍니다. 설치 후 그 파일을 다시 더블클릭하세요.
+4. 자동으로 설치·실행되고 브라우저가 열립니다.
+
+> 이 파일이 하는 일: 최신 코드를 내려받고(→ 홈 폴더의 `lms-notifier`), Python을 확인한 뒤
+> `bootstrap.py`를 실행합니다. 운영체제 기본 도구만 쓰므로 **Git이 없어도 됩니다.**
+
+### 방법 B — 터미널에 익숙하다면 (Git 사용)
 
 ```bash
 git clone https://github.com/Dirini/lms-notifier.git
 cd lms-notifier
-python3 bootstrap.py
+python3 bootstrap.py      # 윈도우는 py bootstrap.py
 ```
 
-`bootstrap.py`가 가상환경 생성 + 패키지 설치 + 웹 서버 실행까지 한 번에 처리하고, 끝나면
-브라우저가 자동으로 열립니다. (수동으로 하고 싶다면 아래 3번 "실행" 참고.)
+`bootstrap.py`가 가상환경 생성 + 패키지 설치 + 웹 서버 실행까지 한 번에 처리합니다.
+(윈도우 가상환경 경로도 자동으로 처리합니다.)
+
+### Python이 없다면 (공통)
+
+Python이 안 깔려 있으면 아래에서 받아 설치하세요(5분). 설치 파일도 방법 A가 자동으로 열어줍니다.
+- **맥**: <https://www.python.org/downloads/macos/>
+- **윈도우**: <https://www.python.org/downloads/windows/>
+  → 설치 첫 화면에서 **"Add Python to PATH"** 체크를 꼭 켜세요. 안 켜면 인식이 안 됩니다.
 
 ## 2. 텔레그램 봇 만들기 (각자 하나씩)
 
