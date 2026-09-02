@@ -30,9 +30,9 @@ if [ -z "$PY" ]; then
   echo "   https://www.python.org/downloads/macos/"
   echo "   (다운로드 → 더블클릭 → 안내대로 설치. 5분이면 돼요.)"
   echo
-  read -n 1 -s -r -p "확인했으면 아무 키나 누르세요..."
   # 파이썬 받는 페이지를 자동으로 열어준다
   open "https://www.python.org/downloads/macos/" 2>/dev/null || true
+  if [ -t 0 ]; then read -n 1 -s -r -p "설치 후 이 창을 닫고 다시 실행하세요. (아무 키나)"; fi
   exit 1
 fi
 echo "✓ Python 확인: $($PY --version 2>&1)"
